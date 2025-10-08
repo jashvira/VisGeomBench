@@ -1,0 +1,19 @@
+[project]
+name = "visual_geometry_bench"
+version = "0.1.0"
+description = "Visual geometry evaluation benchmark"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "prime",
+    "verifiers",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
