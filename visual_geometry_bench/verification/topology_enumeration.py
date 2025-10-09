@@ -106,15 +106,6 @@ def verify_topology_enumeration(model_output: str, record: dict, *, return_diff:
         pred_labels.update(cfg_tuple)
         pred_set.add(canonicalize(cfg_tuple))
 
-    if return_diff and validation_errors:
-        return {
-            "passed": False,
-            "missing": [],
-            "extra": [],
-            "errors": [f"{len(validation_errors)} validation issue(s)"],
-            "details": {"issues": validation_errors},
-        }
-
     # Ground truth labels and canonical set in one pass
     gt_labels = set()
     gt_set = set()
@@ -133,7 +124,8 @@ def verify_topology_enumeration(model_output: str, record: dict, *, return_diff:
         missing = sorted(gt_set - pred_set)
         extra = sorted(pred_set - gt_set)
         sets_ok = len(missing) == 0 and len(extra) == 0
-        passed = length_ok and labels_ok and sets_ok
+        has_validation_errors = validation_errors and len(validation_errors) > 0
+        passed = length_ok and labels_ok and sets_ok and not has_validation_errors
 
         details = {
             "pred_len": pred_len,
@@ -150,12 +142,18 @@ def verify_topology_enumeration(model_output: str, record: dict, *, return_diff:
                 "missing_labels": sorted(gt_labels - pred_labels),
                 "extra_labels": sorted(pred_labels - gt_labels),
             }
+        if has_validation_errors:
+            details["issues"] = validation_errors
+
+        errors = []
+        if has_validation_errors:
+            errors.append(f"{len(validation_errors)} validation issue(s)")
 
         return {
             "passed": passed,
             "missing": [list(t) for t in missing],
             "extra": [list(t) for t in extra],
-            "errors": [],
+            "errors": errors,
             "details": details,
         }
 
