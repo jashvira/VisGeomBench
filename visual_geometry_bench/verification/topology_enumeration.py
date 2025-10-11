@@ -1,7 +1,7 @@
 """Verification for topology enumeration model outputs.
 
 Semantics:
-- Format: Python list of 4-tuples of ints, values in [0..n_classes-1].
+- Format: Python list of 4-tuples of integers.
 - Order: (1) lengths match, (2) label sets match, (3) canonicalised sets match.
 - Canonicalisation: first-occurrence relabelling; tuple order matters, list order doesn't.
 - Pass: canonicalised(pred) == canonicalised(gt); no subset scoring.
@@ -48,7 +48,7 @@ def verify_topology_enumeration(model_output: str, record: dict, *, return_diff:
 
     Args:
         model_output: Raw model output string
-        record: Dataset record with ground_truth and datagen_args
+        record: Dataset record with ground_truth only
         return_diff: If True, return detailed diagnostic dict instead of bool
 
     Returns:
@@ -75,7 +75,6 @@ def verify_topology_enumeration(model_output: str, record: dict, *, return_diff:
 
     # Ground truth setup
     gt_list = record["ground_truth"]
-    n_classes = record["datagen_args"]["n_classes"]
 
     # Lengths
     pred_len = len(parsed)
@@ -84,24 +83,12 @@ def verify_topology_enumeration(model_output: str, record: dict, *, return_diff:
     if not return_diff and pred_len != gt_len:
         return False
 
-    # Collect labels, validate range, canonicalise in one pass
-    valid_range = set(range(n_classes))
+    # Collect labels and canonicalise in one pass
     pred_labels = set()
     pred_set = set()
-    validation_errors = [] if return_diff else None
 
     for cfg in parsed:
         cfg_tuple = tuple(cfg)
-        # Range validation
-        invalid = not all(val in valid_range for val in cfg_tuple)
-        if invalid:
-            if return_diff:
-                validation_errors.append({
-                    "config": list(cfg_tuple),
-                    "reason": f"values not in [0, {n_classes-1}]"
-                })
-                continue
-            return False
         # Collect labels and canonicalise
         pred_labels.update(cfg_tuple)
         pred_set.add(canonicalize(cfg_tuple))
@@ -124,8 +111,7 @@ def verify_topology_enumeration(model_output: str, record: dict, *, return_diff:
         missing = sorted(gt_set - pred_set)
         extra = sorted(pred_set - gt_set)
         sets_ok = len(missing) == 0 and len(extra) == 0
-        has_validation_errors = validation_errors and len(validation_errors) > 0
-        passed = length_ok and labels_ok and sets_ok and not has_validation_errors
+        passed = length_ok and labels_ok and sets_ok
 
         details = {
             "pred_len": pred_len,
@@ -142,12 +128,9 @@ def verify_topology_enumeration(model_output: str, record: dict, *, return_diff:
                 "missing_labels": sorted(gt_labels - pred_labels),
                 "extra_labels": sorted(pred_labels - gt_labels),
             }
-        if has_validation_errors:
-            details["issues"] = validation_errors
+        # no additional issues collected
 
         errors = []
-        if has_validation_errors:
-            errors.append(f"{len(validation_errors)} validation issue(s)")
 
         return {
             "passed": passed,
