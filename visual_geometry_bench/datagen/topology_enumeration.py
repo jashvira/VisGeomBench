@@ -7,8 +7,6 @@ and the assumption of continuous boundaries.
 
 from __future__ import annotations
 
-import json
-
 from visual_geometry_bench.datagen.utils import (
     CANONICAL_CORNER_ORDER,
     canonicalize_first_occurrence,
@@ -159,11 +157,9 @@ def build_problem_id(
     Returns:
         8-character hex hash string
     """
-    # Canonical datagen_args: sorted keys for determinism
-    canonical_args = json.dumps(datagen_args, sort_keys=True)
     return compute_content_hash(
         problem_type=problem_type,
-        datagen_args=canonical_args,
+        datagen_args=datagen_args,
         prompt=prompt,
         ground_truth=ground_truth,
         hash_name="sha1",
