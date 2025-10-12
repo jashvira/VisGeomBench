@@ -15,11 +15,13 @@ from pathlib import Path
 from typing import Callable, Iterable
 
 from visual_geometry_bench.datagen import topology_enumeration
+from visual_geometry_bench.datagen import topology_edge_tasks
 
 # Static registry: task_type -> generator function
 # First-class functions, no dynamic imports or magic
 _TASK_GENERATORS: dict[str, Callable[..., dict]] = {
     "topology_enumeration": topology_enumeration.generate_dataset_record,
+    "topology_edge_tasks": topology_edge_tasks.generate_dataset_record,
 }
 
 

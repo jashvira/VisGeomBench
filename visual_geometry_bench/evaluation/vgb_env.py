@@ -12,9 +12,18 @@ from datasets import Dataset
 from visual_geometry_bench.verification.topology_enumeration import (
     verify_topology_enumeration,
 )
+from visual_geometry_bench.verification.topology_edge_tasks import (
+    verify_topology_edge_tasks,
+)
 
 from .answer_parser import PythonLiteralParser
 from .dataset_jsonl import load_jsonl
+
+# Static registry: problem_type -> verifier function
+_VERIFIER_REGISTRY: dict[str, callable] = {
+    "topology_enumeration": verify_topology_enumeration,
+    "topology_edge_tasks": verify_topology_edge_tasks,
+}
 
 
 def load_environment(
@@ -40,7 +49,18 @@ def load_environment(
         )
 
     records = load_jsonl(path)
-    chosen_verify_fn = verify_fn or _default_verify_fn
+
+    # Auto-select verifier from registry if not provided
+    if verify_fn is None:
+        problem_type = (records[0].get("metadata", {}).get("problem_type", "") if records else "")
+        if problem_type not in _VERIFIER_REGISTRY:
+            raise ValueError(
+                f"Unknown problem type '{problem_type}'. "
+                f"Available types: {list(_VERIFIER_REGISTRY.keys())}"
+            )
+        chosen_verify_fn = _VERIFIER_REGISTRY[problem_type]
+    else:
+        chosen_verify_fn = verify_fn
 
     # Adapt dataset to verifiers format: each item needs "prompt" and "answer"
     # answer = ground truth only (display and verifier input)
@@ -81,12 +101,5 @@ def load_environment(
         rubric=rubric,
         parser=parser,
         system_prompt=system_prompt,
-    )
-
-
-def _default_verify_fn(model_output: str, record: dict) -> bool:
-    """Default boolean verifier for topology enumeration (strict mode)."""
-    return bool(
-        verify_topology_enumeration(model_output, record, return_diff=False)
     )
 

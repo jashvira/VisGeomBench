@@ -7,12 +7,15 @@ and the assumption of continuous boundaries.
 
 from __future__ import annotations
 
-import hashlib
-import json
+from visual_geometry_bench.datagen.utils import (
+    CANONICAL_CORNER_ORDER,
+    canonicalize_first_occurrence,
+    compute_content_hash,
+    corner_order_permutation,
+    permute_config,
+    validate_corner_order,
+)
 
-
-# Canonical corner order used internally for storing solutions
-_CANONICAL_CORNER_ORDER = ("bottom-left", "bottom-right", "top-right", "top-left")
 
 # Ground truth solutions for n=2: configurations forcing 2 classes to meet inside.
 # Stored in canonical corner order.
@@ -36,64 +39,6 @@ _SOLUTIONS_THREE_CLASSES: list[tuple[int, int, int, int]] = [
 ]
 
 
-def _corner_order_permutation(corner_order: tuple[str, str, str, str]) -> tuple[int, int, int, int]:
-    """Compute index permutation to map canonical corner order to the requested order.
-
-    Returns a 4-tuple of indices describing how to reorder configurations.
-    Example: if corner_order = ("top-left", "bottom-left", ...), returns (3, 0, ...).
-    """
-    _validate_corner_order(corner_order)
-    return tuple(corner_order.index(corner) for corner in _CANONICAL_CORNER_ORDER)
-
-
-def _validate_corner_order(corner_order: tuple[str, str, str, str]) -> None:
-    """Ensure the provided corner_order is a permutation of the canonical names.
-
-    Raises:
-        ValueError: If corner_order is not a permutation of the canonical order
-    """
-    if (
-        not isinstance(corner_order, tuple)
-        or len(corner_order) != 4
-        or set(corner_order) != set(_CANONICAL_CORNER_ORDER)
-    ):
-        raise ValueError(
-            "corner_order must be a permutation of ('bottom-left','bottom-right','top-right','top-left')"
-        )
-
-
-def _permute_config(config: tuple[int, int, int, int], perm: tuple[int, int, int, int]) -> tuple[int, int, int, int]:
-    """Apply an index permutation to reorder a configuration tuple.
-
-    Args:
-        config: Configuration to permute
-        perm: Index permutation (4-tuple of indices)
-
-    Returns:
-        Reordered configuration
-    """
-    return tuple(config[perm[i]] for i in range(4))
-
-
-def _relabel_first_occurrence(config: tuple[int, int, int, int]) -> tuple[int, int, int, int]:
-    """Relabel configuration to 0..k-1 in first-occurrence (left-to-right) order.
-
-    This implements the core canonicalisation: scanning left-to-right, the first
-    unseen label becomes 0, the next becomes 1, and so on.
-
-    Example: (7, 5, 7, 3) -> (0, 1, 0, 2)
-    """
-    seen = {}
-    next_label = 0
-    result = []
-    for label in config:
-        if label not in seen:
-            seen[label] = next_label
-            next_label += 1
-        result.append(seen[label])
-    return tuple(result)
-
-
 def canonicalize(config: tuple[int, int, int, int]) -> tuple[int, int, int, int]:
     """Canonicalise a configuration to a standard form by first-occurrence relabelling.
 
@@ -110,12 +55,12 @@ def canonicalize(config: tuple[int, int, int, int]) -> tuple[int, int, int, int]
         >>> canonicalize((7, 5, 7, 3))
         (0, 1, 0, 2)
     """
-    return _relabel_first_occurrence(config)
+    return canonicalize_first_occurrence(config)
 
 
 def make_prompt(
     n_classes: int,
-    corner_order: tuple[str, str, str, str] = _CANONICAL_CORNER_ORDER,
+    corner_order: tuple[str, str, str, str] = CANONICAL_CORNER_ORDER,
 ) -> str:
     """Generate the problem prompt for topology enumeration.
 
@@ -134,7 +79,7 @@ def make_prompt(
     """
     if n_classes not in (2, 3):
         raise ValueError("n_classes must be 2 or 3")
-    _validate_corner_order(corner_order)
+    validate_corner_order(corner_order)
 
     meet_phrase = (
         "meet somewhere inside the square" if n_classes == 2
@@ -159,7 +104,7 @@ def make_prompt(
 
 def get_solutions(
     n_classes: int,
-    corner_order: tuple[str, str, str, str] = _CANONICAL_CORNER_ORDER,
+    corner_order: tuple[str, str, str, str] = CANONICAL_CORNER_ORDER,
 ) -> list[tuple[int, int, int, int]]:
     """Return ground truth solutions for the given class count and corner order.
 
@@ -183,13 +128,13 @@ def get_solutions(
     else:
         raise ValueError("n_classes must be 2 or 3")
 
-    _validate_corner_order(corner_order)
+    validate_corner_order(corner_order)
 
-    if corner_order == _CANONICAL_CORNER_ORDER:
+    if corner_order == CANONICAL_CORNER_ORDER:
         return canonical_solutions.copy()
 
-    perm = _corner_order_permutation(corner_order)
-    return [_permute_config(cfg, perm) for cfg in canonical_solutions]
+    perm = corner_order_permutation(corner_order)
+    return [permute_config(cfg, perm) for cfg in canonical_solutions]
 
 
 def build_problem_id(
@@ -212,16 +157,14 @@ def build_problem_id(
     Returns:
         8-character hex hash string
     """
-    # Canonical datagen_args: sorted keys for determinism
-    canonical_args = json.dumps(datagen_args, sort_keys=True)
-    payload = {
-        "problem_type": problem_type,
-        "datagen_args": canonical_args,
-        "prompt": prompt,
-        "ground_truth": ground_truth,
-    }
-    h = hashlib.sha1(json.dumps(payload, sort_keys=True).encode("utf-8"))
-    return h.hexdigest()[:8]
+    return compute_content_hash(
+        problem_type=problem_type,
+        datagen_args=datagen_args,
+        prompt=prompt,
+        ground_truth=ground_truth,
+        hash_name="sha1",
+        prefix_len=8,
+    )
 
 
 def generate_dataset_record(
