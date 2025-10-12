@@ -24,3 +24,16 @@ uv run python scripts/generate_dataset.py configs/sample_dataset.toml
 ```bash
 uv run pytest tests/ -v
 ```
+
+## Evaluate
+
+```bash
+uv run vf-eval visual_geometry_bench.evaluation \
+  -a '{"dataset_path": "data/visual_geometry_bench_sample.jsonl"}' \
+  -m google/gemini-2.5-flash-preview-09-2025 \
+  -b https://openrouter.ai/api/v1 \
+  -k OPENROUTER_API_KEY \
+  -n 4 -r 3 -c 2 -s
+```
+
+Flags: `-n` examples, `-r` rollouts per example, `-c` max concurrent, `-s` save outputs.
