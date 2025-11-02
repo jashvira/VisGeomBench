@@ -39,6 +39,8 @@ class PythonLiteralParser(vf.Parser):
         else:
             text = completion[-1]["content"] if completion else ""
 
+        text = self._normalise_text(text)
+
         if not text:
             return None
 
@@ -57,6 +59,10 @@ class PythonLiteralParser(vf.Parser):
         if self._is_valid_literal(stripped):
             return stripped
 
+        simple_list = self._parse_simple_sequence(stripped)
+        if simple_list is not None:
+            return simple_list
+
         return None
 
     def _extract_from_code_fence(self, text: str) -> Optional[str]:
@@ -65,7 +71,7 @@ class PythonLiteralParser(vf.Parser):
         Returns the last code fence found, or None.
         """
         # Match ```python or just ```
-        pattern = r'```(?:python)?\s*(.*?)```'
+        pattern = r"```(?:[^\n`]*\n)?(.*?)```"
         matches = re.findall(pattern, text, re.DOTALL)
         if matches:
             return matches[-1].strip()  # Return last fence
@@ -121,4 +127,104 @@ class PythonLiteralParser(vf.Parser):
             return True
         except (ValueError, SyntaxError):
             return False
+
+    def _parse_simple_sequence(self, text: str) -> Optional[str]:
+        """Convert comma/newline separated scalars into a Python list literal."""
+
+        if not text:
+            return None
+
+        for candidate in self._simple_sequence_candidates(text):
+            literal = self._coerce_simple_sequence(candidate)
+            if literal is not None:
+                return literal
+        return None
+
+    def _simple_sequence_candidates(self, text: str) -> list[str]:
+        """Generate candidate substrings likely containing the scalar list."""
+
+        candidates: list[str] = []
+        seen: set[str] = set()
+
+        def _add(candidate: str) -> None:
+            candidate = candidate.strip()
+            if candidate and candidate not in seen:
+                seen.add(candidate)
+                candidates.append(candidate)
+
+        _add(text)
+
+        # Last non-empty line often carries the answer.
+        lines = [line.strip() for line in text.splitlines() if line.strip()]
+        if lines:
+            _add(lines[-1])
+
+        # Trailing segments after separators (colon/arrow) capture role prefixes, e.g. "assistant: ...".
+        for separator in ("->", "=>", ":", "="):
+            if separator in text:
+                _add(text.rsplit(separator, 1)[-1])
+
+        return candidates
+
+    def _coerce_simple_sequence(self, text: str) -> Optional[str]:
+        """Attempt to turn a plain scalar sequence into a list literal."""
+
+        if any(bracket in text for bracket in "[]{}()"):
+            return None
+
+        candidate = text.replace("\n", ",")
+        tokens = [tok.strip() for tok in candidate.split(",") if tok.strip()]
+        if not tokens:
+            return None
+
+        allowed = re.compile(r"^[A-Za-z0-9_.\-\"']+$")
+        if not all(allowed.fullmatch(tok) for tok in tokens):
+            return None
+
+        try:
+            normalised = [self._normalise_csv_token(tok) for tok in tokens]
+        except ValueError:
+            return None
+
+        literal = "[" + ", ".join(normalised) + "]"
+        return literal if self._is_valid_literal(literal) else None
+
+    def _normalise_csv_token(self, token: str) -> str:
+        """Coerce a simple token into a literal element."""
+
+        if token in {'""', "''"}:
+            return '""'
+
+        if (token.startswith('"') and token.endswith('"') and len(token) >= 2) or (
+            token.startswith("'") and token.endswith("'") and len(token) >= 2
+        ):
+            return token
+
+        try:
+            value = ast.literal_eval(token)
+        except Exception:  # noqa: BLE001 - broad except is fine for literal eval
+            value = None
+
+        if isinstance(value, (int, float)):
+            # Preserve leading zeros (including "0001") by treating as string literal.
+            stripped = token.lstrip("-+")
+            if stripped.startswith("0") and len(stripped) > 1:
+                return repr(token)
+            return token
+
+        return repr(token)
+
+    def _normalise_text(self, text: str) -> str:
+        """Replace common typographic quotes with ASCII equivalents."""
+
+        if not text:
+            return text
+
+        translation_table = str.maketrans({
+            "\u2018": "'",
+            "\u2019": "'",
+            "\u201c": '"',
+            "\u201d": '"',
+        })
+        return text.translate(translation_table)
 
