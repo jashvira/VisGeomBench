@@ -1,0 +1,83 @@
+[dataset]
+output = "data/preview.jsonl"
+schema_version = "1.0"
+
+[[task]]
+type = "topology_enumeration"
+metadata = { tags = ["preview", "topology"], requires_visual = false }
+
+datagen_args_grid = [
+  { n_classes = 2, corner_order = ["bottom-left", "bottom-right", "top-right", "top-left"], metadata = { difficulty = "easy" } },
+  { n_classes = 2, corner_order = ["bottom-right", "bottom-left", "top-left", "top-right"], metadata = { difficulty = "medium" } },
+  { n_classes = 3, corner_order = ["top-left", "bottom-right", "bottom-left", "top-right"], metadata = { difficulty = "hard" } },
+]
+
+[[task]]
+type = "topology_edge_tasks"
+metadata = { tags = ["preview", "topology", "edges"], requires_visual = false }
+
+datagen_args_grid = [
+  { subtask = "enumerate_edges", corner_order = ["bottom-left", "bottom-right", "top-right", "top-left"], edge_order = ["bottom", "right", "top", "left"], cases = [0], metadata = { difficulty = "easy" } },
+  { subtask = "enumerate_edges", corner_order = ["bottom-left", "bottom-right", "top-right", "top-left"], edge_order = ["bottom", "right", "top", "left"], cases = [7, 8], metadata = { difficulty = "medium" } },
+  { subtask = "enumerate_edges", corner_order = ["top-left", "bottom-right", "bottom-left", "top-right"], edge_order = ["right", "top", "left", "bottom"], cases = [7, 12, 14], metadata = { difficulty = "hard" } },
+]
+
+[[task]]
+type = "topology_edge_tasks"
+metadata = { tags = ["preview", "topology", "classify"], requires_visual = false }
+
+datagen_args_grid = [
+  { subtask = "classify_behaviour", corner_order = ["bottom-left", "bottom-right", "top-right", "top-left"], cases = [0], metadata = { difficulty = "easy" } },
+  { subtask = "classify_behaviour", corner_order = ["bottom-left", "bottom-right", "top-right", "top-left"], cases = [6, 8], metadata = { difficulty = "medium" } },
+  { subtask = "classify_behaviour", corner_order = ["top-right", "bottom-right", "bottom-left", "top-left"], cases = [4, 10, 11, 14], metadata = { difficulty = "hard" } },
+]
+
+[[task]]
+type = "convex_hull_ordering"
+metadata = { tags = ["preview", "geometry", "convex-hull"], requires_visual = true }
+
+datagen_args_grid = [
+  { num_points = 6,  seed = 0, metadata = { difficulty = "easy" } },
+  { num_points = 14, seed = 11, metadata = { difficulty = "medium" } },
+  { num_points = 40, seed = 97, metadata = { difficulty = "hard" } },
+]
+
+[[task]]
+type = "delaunay_triangulation"
+metadata = { tags = ["preview", "geometry", "triangulation", "delaunay"], requires_visual = false }
+
+datagen_args_grid = [
+  { num_points = 8,  seed = 0, metadata = { difficulty = "easy" } },
+  { num_points = 15, seed = 31, metadata = { difficulty = "medium" } },
+  { num_points = 40, seed = 101, metadata = { difficulty = "hard" } },
+]
+
+[[task]]
+type = "two_segments"
+metadata = { tags = ["preview", "two-segments", "partitioning"], requires_visual = true }
+
+datagen_args_grid = [
+  { counts = { triangle = 1, quadrilateral = 1 }, metadata = { difficulty = "easy" } },
+  { counts = { triangle = 2, quadrilateral = 1, pentagon = 1 }, square = "random", square_seed = 23, metadata = { difficulty = "medium" } },
+  { counts = { triangle = 2, quadrilateral = 1, pentagon = 1, hexagon = 1 }, square = "random", square_seed = 37, coordinate_grid = [0.0, 0.25, 0.5, 0.75, 1.0], metadata = { difficulty = "hard" } },
+]
+
+[[task]]
+type = "shikaku_rectangles"
+metadata = { tags = ["preview", "shikaku", "rectangles", "grid"] }
+
+datagen_args_grid = [
+  { dataset_path = "tmp_shikaku/generated/rectangles.json", puzzle_index = 0, metadata = { difficulty = "easy" } },
+  { dataset_path = "tmp_shikaku/generated/rectangles.json", puzzle_index = 24, metadata = { difficulty = "medium" } },
+  { dataset_path = "tmp_shikaku/generated/rectangles.json", puzzle_index = 49, metadata = { difficulty = "hard" } },
+]
+
+[[task]]
+type = "half_subdivision_neighbours"
+metadata = { tags = ["preview", "geometry", "tree", "subdivision"], requires_visual = false }
+
+datagen_args_grid = [
+  { max_depth = 2, min_depth = 2, split_prob = 0.5, seed = 42, dimension = "2D", metadata = { difficulty = "easy" } },
+  { max_depth = 7, min_depth = 5, split_prob = 0.65, seed = 7,  dimension = "2D", metadata = { difficulty = "medium" } },
+  { max_depth = 9, min_depth = 7, split_prob = 0.8, seed = 19, dimension = "3D", metadata = { difficulty = "hard" } },
+]
