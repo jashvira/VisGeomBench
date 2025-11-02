@@ -95,7 +95,11 @@ def _resolve_record(info, record_lookup, default_record):
     return default_record
 
 
-def _make_reward_func(problem_type: str, record_lookup: dict[str, dict[str, Any]]):
+def _make_reward_func(
+    default_verifier: Callable[[str, dict], bool],
+    problem_type: str,
+    record_lookup: dict[str, dict[str, Any]],
+):
     """Create reward function compatible with vf.Rubric."""
 
     def reward_func(parser, completion, answer, *, info=None, **_kwargs):
@@ -107,9 +111,15 @@ def _make_reward_func(problem_type: str, record_lookup: dict[str, dict[str, Any]
         record_problem = record.get("metadata", {}).get("problem_type", problem_type)
 
         if record_problem not in TASK_REGISTRY:
-            raise ValueError(f"Unknown problem type '{record_problem}'. Available types: {list(TASK_REGISTRY.keys())}")
+            raise ValueError(
+                f"Unknown problem type '{record_problem}'. Available types: {list(TASK_REGISTRY.keys())}"
+            )
 
-        verifier = get_verifier(record_problem)
+        verifier = (
+            default_verifier
+            if record_problem == problem_type
+            else get_verifier(record_problem)
+        )
         needs_gt = task_requires_ground_truth(record_problem)
 
         # Handle ground truth injection

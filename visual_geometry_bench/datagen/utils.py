@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from typing import Iterable, Sequence
 
 
@@ -91,5 +92,27 @@ def compute_content_hash(
     digest = hashlib.new(hash_name)
     digest.update(data.encode("utf-8"))
     return digest.hexdigest()[:prefix_len]
+
+
+def validate_point_array(
+    points: Sequence[Sequence[float]], *, min_points: int = 0
+) -> list[tuple[float, float]]:
+    """Validate 2D point arrays and coerce to list of float tuples."""
+
+    if len(points) < min_points:
+        raise AssertionError(f"requires at least {min_points} points; got {len(points)}")
+
+    coerced: list[tuple[float, float]] = []
+    for idx, point in enumerate(points):
+        if len(point) != 2:
+            raise ValueError(f"point {idx} is not length 2: {point!r}")
+
+        x, y = float(point[0]), float(point[1])
+        if not (math.isfinite(x) and math.isfinite(y)):
+            raise ValueError(f"point {idx} has non-finite coordinates: {(x, y)!r}")
+
+        coerced.append((x, y))
+
+    return coerced
 
 
