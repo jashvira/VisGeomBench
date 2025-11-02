@@ -5,18 +5,11 @@ various visual geometry reasoning tasks.
 """
 
 from visual_geometry_bench.datagen.topology_enumeration import (
-    build_problem_id,
-    canonicalize,
     generate_dataset_record,
-    get_solutions,
     make_prompt,
 )
 
 __all__ = [
-    "build_problem_id",
-    "canonicalize",
     "generate_dataset_record",
-    "get_solutions",
     "make_prompt",
 ]
-

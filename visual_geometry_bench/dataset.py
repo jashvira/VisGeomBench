@@ -12,17 +12,9 @@ from __future__ import annotations
 import json
 import tomllib
 from pathlib import Path
-from typing import Callable, Iterable
+from typing import Iterable
 
-from visual_geometry_bench.datagen import topology_enumeration
-from visual_geometry_bench.datagen import topology_edge_tasks
-
-# Static registry: task_type -> generator function
-# First-class functions, no dynamic imports or magic
-_TASK_GENERATORS: dict[str, Callable[..., dict]] = {
-    "topology_enumeration": topology_enumeration.generate_dataset_record,
-    "topology_edge_tasks": topology_edge_tasks.generate_dataset_record,
-}
+from visual_geometry_bench.registry import TASK_REGISTRY, get_generator
 
 
 def build_records_from_config(cfg: dict) -> list[dict]:
@@ -41,14 +33,17 @@ def build_records_from_config(cfg: dict) -> list[dict]:
         List of dataset records with {id, prompt, ground_truth, metadata, datagen_args}
 
     Raises:
-        KeyError: If task type not found in _TASK_GENERATORS registry
+        KeyError: If task type not found in task registry
     """
     tasks = cfg.get("task", [])
 
     def build_task_records(task: dict) -> list[dict]:
         """Build all records for a single task."""
         task_type = task["type"]
-        generator = _TASK_GENERATORS[task_type]
+        if task_type not in TASK_REGISTRY:
+            available = ", ".join(sorted(TASK_REGISTRY.keys()))
+            raise KeyError(f"Unknown task type '{task_type}'. Available types: {available}")
+        generator = get_generator(task_type)
         task_metadata = task.get("metadata", {})
         datagen_args_list = task.get("datagen_args_grid", [])
 
@@ -122,4 +117,3 @@ def build_dataset_from_config(config_path: str | Path, output_path: str | Path |
         save_jsonl(records, out_path)
 
     return records
-
