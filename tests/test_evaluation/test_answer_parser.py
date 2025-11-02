@@ -1,5 +1,7 @@
 """Tests for PythonLiteralParser."""
 
+import ast
+
 import pytest
 
 from visual_geometry_bench.evaluation.answer_parser import PythonLiteralParser
@@ -137,6 +139,7 @@ class TestPythonLiteralParser:
         result = parser.parse_answer(text)
         assert result == "[(0, 1, 0, 1)]"
 
+    
     def test_code_fence_priority_over_backscan(self, parser):
         """Test that code fence is tried before backscan."""
         text = """
@@ -151,4 +154,44 @@ class TestPythonLiteralParser:
         result = parser.parse_answer(text)
         # Should get the code fence content, not the last bracket
         assert result == "[(0, 1, 0, 1)]"
+
+    def test_parse_simple_sequence_with_role_prefix(self, parser):
+        """Comma list prefixed by a role label is parsed correctly."""
+        text = "assistant: 00110, 00101, 001111, 10010"
+        result = parser.parse_answer(text)
+        assert result is not None
+        parsed = ast.literal_eval(result)
+        assert list(map(str, parsed)) == ["00110", "00101", "001111", "10010"]
+
+    def test_parse_simple_sequence_with_arrow_prefix(self, parser):
+        """Arrow-separated answers are also accepted."""
+        text = "model answer => 00110, 00101, 001111, 10010"
+        result = parser.parse_answer(text)
+        assert result is not None
+        parsed = ast.literal_eval(result)
+        assert list(map(str, parsed)) == ["00110", "00101", "001111", "10010"]
+
+    def test_parse_simple_sequence_with_embedded_arrow(self, parser):
+        """Handles prose with trailing arrow segment."""
+        text = "assistant: Here is the list -> 00110, 00101, 001111, 10010"
+        result = parser.parse_answer(text)
+        assert result is not None
+        parsed = ast.literal_eval(result)
+        assert list(map(str, parsed)) == ["00110", "00101", "001111", "10010"]
+
+    def test_parse_simple_sequence_numeric_tokens(self, parser):
+        """Plain numeric tokens remain numeric values."""
+        text = "0, 1, -2, 3"
+        result = parser.parse_answer(text)
+        assert result is not None
+        parsed = ast.literal_eval(result)
+        assert tuple(parsed) == (0, 1, -2, 3)
+
+    def test_parse_simple_sequence_leading_zero_tokens(self, parser):
+        """Tokens with leading zeros are preserved as strings."""
+        text = "0000, 0001, 0010"
+        result = parser.parse_answer(text)
+        assert result is not None
+        parsed = ast.literal_eval(result)
+        assert list(map(str, parsed)) == ["0000", "0001", "0010"]
 
