@@ -4,31 +4,131 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Callable
+from typing import Any, Iterable
 
 import verifiers as vf
 from datasets import Dataset
 
-from visual_geometry_bench.verification.topology_enumeration import (
-    verify_topology_enumeration,
-)
-from visual_geometry_bench.verification.topology_edge_tasks import (
-    verify_topology_edge_tasks,
+from visual_geometry_bench.registry import (
+    TASK_REGISTRY,
+    get_verifier,
+    requires_ground_truth as task_requires_ground_truth,
 )
 
 from .answer_parser import PythonLiteralParser
 from .dataset_jsonl import load_jsonl
 
-# Static registry: problem_type -> verifier function
-_VERIFIER_REGISTRY: dict[str, callable] = {
-    "topology_enumeration": verify_topology_enumeration,
-    "topology_edge_tasks": verify_topology_edge_tasks,
-}
+
+def _resolve_dataset_path(dataset_path: str | None) -> str:
+    """Resolve dataset path from argument or environment variable."""
+
+    resolved = dataset_path or os.environ.get("VGB_DATASET")
+    if not resolved:
+        raise ValueError(
+            "Missing dataset path. Pass dataset_path or set VGB_DATASET env var."
+        )
+    return resolved
+
+
+def _select_verifier(records: list[dict[str, Any]]) -> tuple[Callable[[str, dict], bool], str]:
+    """Return verifier function and associated problem type from registry."""
+
+    if not records:
+        raise ValueError("Dataset is empty; cannot infer problem_type for verifier.")
+
+    problem_type = records[0].get("metadata", {}).get("problem_type", "")
+    if problem_type not in TASK_REGISTRY:
+        raise ValueError(
+            f"Unknown problem type '{problem_type}'. "
+            f"Available types: {list(TASK_REGISTRY.keys())}"
+        )
+
+    return get_verifier(problem_type), problem_type
+
+
+def _format_records(
+    records: Iterable[dict[str, Any]]
+) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]]]:
+    """Create dataset rows plus a lookup table for raw records."""
+
+    formatted: list[dict[str, Any]] = []
+    lookup: dict[str, dict[str, Any]] = {}
+
+    for index, record in enumerate(records):
+        problem_type = record.get("metadata", {}).get("problem_type", "")
+        needs_ground_truth = task_requires_ground_truth(problem_type)
+        answer_payload = record.get("ground_truth") if needs_ground_truth else ""
+
+        record_id = record.get("id", "")
+        token = record_id or str(index)
+
+        formatted.append(
+            {
+                "id": record_id,
+                "prompt": [{"role": "user", "content": record["prompt"]}],
+                "answer": json.dumps(answer_payload) if answer_payload not in ("", None) else "",
+                "info": json.dumps({"record_token": token}),
+            }
+        )
+
+        lookup[token] = record
+
+    return formatted, lookup
+
+
+def _resolve_record(info, record_lookup, default_record):
+    """Extract record from info using lookup token."""
+    if isinstance(info, str):
+        if info in record_lookup:
+            return dict(record_lookup[info])
+        else:
+            try:
+                info = json.loads(info)
+            except json.JSONDecodeError:
+                return default_record
+    
+    if isinstance(info, dict):
+        token = info.get("record_token")
+        if isinstance(token, str) and token in record_lookup:
+            return dict(record_lookup[token])
+    
+    return default_record
+
+
+def _make_reward_func(problem_type: str, record_lookup: dict[str, dict[str, Any]]):
+    """Create reward function compatible with vf.Rubric."""
+
+    def reward_func(parser, completion, answer, *, info=None, **_kwargs):
+        extracted = parser.parse_answer(completion)
+        if extracted is None:
+            return 0.0
+
+        record = _resolve_record(info, record_lookup, {})
+        record_problem = record.get("metadata", {}).get("problem_type", problem_type)
+
+        if record_problem not in TASK_REGISTRY:
+            raise ValueError(f"Unknown problem type '{record_problem}'. Available types: {list(TASK_REGISTRY.keys())}")
+
+        verifier = get_verifier(record_problem)
+        needs_gt = task_requires_ground_truth(record_problem)
+
+        # Handle ground truth injection
+        if answer and answer not in (None, ""):
+            try:
+                record["ground_truth"] = json.loads(answer)
+            except (json.JSONDecodeError, TypeError):
+                if needs_gt:
+                    return 0.0
+        elif needs_gt:
+            return 0.0
+
+        return 1.0 if verifier(extracted, record) else 0.0
+
+    return reward_func
 
 
 def load_environment(
     dataset_path: str | None = None,
-    verify_fn: Callable[[str, dict], bool] | None = None,
     *,
     system_prompt: str | None = None,
 ):
@@ -36,64 +136,20 @@ def load_environment(
 
     Args:
         dataset_path: Path to JSONL dataset (or use VGB_DATASET env var)
-        verify_fn: Boolean verifier (model_output, record) -> bool
         system_prompt: Optional system prompt for the environment
 
     Returns:
         vf.SingleTurnEnv configured with dataset and rubric
     """
-    path = dataset_path or os.environ.get("VGB_DATASET")
-    if not path:
-        raise ValueError(
-            "Missing dataset path. Pass dataset_path or set VGB_DATASET env var."
-        )
 
-    records = load_jsonl(path)
+    path = _resolve_dataset_path(dataset_path)
+    raw_records = load_jsonl(path)
+    verifier_fn, problem_type = _select_verifier(raw_records)
 
-    # Auto-select verifier from registry if not provided
-    if verify_fn is None:
-        problem_type = (records[0].get("metadata", {}).get("problem_type", "") if records else "")
-        if problem_type not in _VERIFIER_REGISTRY:
-            raise ValueError(
-                f"Unknown problem type '{problem_type}'. "
-                f"Available types: {list(_VERIFIER_REGISTRY.keys())}"
-            )
-        chosen_verify_fn = _VERIFIER_REGISTRY[problem_type]
-    else:
-        chosen_verify_fn = verify_fn
-
-    # Adapt dataset to verifiers format: each item needs "prompt" and "answer"
-    # answer = ground truth only (display and verifier input)
-    dataset_list = []
-    for rec in records:
-        dataset_list.append({
-            "id": rec.get("id", ""),
-            "prompt": [{"role": "user", "content": rec["prompt"]}],
-            "answer": json.dumps(rec["ground_truth"]),
-        })
-
-    # Convert to HuggingFace Dataset (required by verifiers)
-    dataset = Dataset.from_list(dataset_list)
-
-    # Instantiate parser for extracting literals from verbose CoT outputs
+    dataset_rows, record_lookup = _format_records(raw_records)
+    dataset = Dataset.from_list(dataset_rows)
     parser = PythonLiteralParser()
-
-    # Reward function: extract literal from completion, then verify
-    def reward_func(parser, completion, answer, **kwargs):
-        """Reward function following ARC-AGI pattern."""
-        # Extract final answer from (potentially verbose) completion
-        extracted = parser.parse_answer(completion)
-        if extracted is None:
-            return 0.0
-
-        # Build minimal record for verifier from answer (ground truth only)
-        try:
-            ground_truth = json.loads(answer)
-            record = {"ground_truth": ground_truth}
-            return 1.0 if chosen_verify_fn(extracted, record) else 0.0
-        except json.JSONDecodeError:
-            return 0.0
-
+    reward_func = _make_reward_func(verifier_fn, problem_type, record_lookup)
     rubric = vf.Rubric(funcs=[reward_func], parser=parser)
 
     return vf.SingleTurnEnv(
@@ -102,4 +158,3 @@ def load_environment(
         parser=parser,
         system_prompt=system_prompt,
     )
-

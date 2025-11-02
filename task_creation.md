@@ -33,7 +33,7 @@ Implement three functions:
   }
   ```
 
-**Ground truth format:** Must be the exact structure the model should output. The generic evaluation harness (`vgb_env.py`) passes only `ground_truth` to verifiers, so it must be self-contained and in the model's answer format (e.g., a list of tuples, a list of edge pairs, etc.). See `topology_enumeration.py` and `topology_edge_tasks.py` for examples.
+**Ground truth format:** Must be the exact structure the model should output. The generic evaluation harness (`vgb_env.py`) passes the full `record` to verifiers, which contains `ground_truth` and optional `datagen_args`/metadata. Verifiers should primarily rely on `record["ground_truth"]` but may use other fields when needed (e.g., for coordinate transformations). See `topology_enumeration.py` and `topology_edge_tasks.py` for examples.
 
 #### Shared datagen utilities
 - Use `visual_geometry_bench.datagen.utils` for general operations.
@@ -47,7 +47,7 @@ def verify_<task>(model_output: str, record: dict) -> bool:
 # def verify_<task>(model_output: str, record: dict, *, return_diff: bool = False) -> bool | dict:
 ```
 
-**Input:** `record` contains `{"ground_truth": <model's expected format>}`. The verifier should compare the parsed model output directly against `record["ground_truth"]`.
+**Input:** `record` is the full dataset record containing at least `{"ground_truth": <model's expected format>}` and optionally `datagen_args`/metadata. The verifier should compare the parsed model output against `record["ground_truth"]`, using other fields only when necessary for task-specific logic.
 
 Implementation pattern:
 1. **Parse**: extract answer from model output (strict format validation)

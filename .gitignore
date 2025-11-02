@@ -45,6 +45,7 @@ htmlcov/
 
 # Project specific
 data/*.jsonl
+data/*.md
 !data/.gitkeep
 *.log
 
@@ -52,3 +53,12 @@ data/*.jsonl
 uv.lock
 
 outputs/
+--output/
+
+# temp shikaku puzzle artefacts
+tmp_shikaku/rect
+tmp_shikaku/sgt-puzzles_*.deb
+
+# scratch Delaunay assets
+tmp_delaunay/
+tmp_shikaku/
