@@ -43,6 +43,12 @@ def test_verify_two_segments_boundary_fail():
     assert not verify_two_segments(bad, record)
 
 
+def test_verify_two_segments_rejects_boundary_edge_segment():
+    record = _make_record({"triangle": 4})
+    bad = str([((0.0, 0.0), (1.0, 0.0)), ((0.0, 1.0), (1.0, 0.0))])
+    assert not verify_two_segments(bad, record)
+
+
 def test_verify_two_segments_coordinate_grid_enforced():
     record = _make_record({"triangle": 4}, coordinate_grid=[0.0, 0.5, 1.0])
     ok = str([((0.0, 0.0), (1.0, 1.0)), ((0.0, 1.0), (1.0, 0.0))])

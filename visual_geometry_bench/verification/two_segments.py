@@ -153,6 +153,18 @@ def _on_unit_boundary(point: Point, tol: float) -> bool:
     return on_vertical or on_horizontal
 
 
+def _segment_on_boundary_edge(p0: Point, p1: Point, tol: float) -> bool:
+    same_x = isclose(p0[0], p1[0], abs_tol=tol)
+    same_y = isclose(p0[1], p1[1], abs_tol=tol)
+
+    if same_x and (isclose(p0[0], 0.0, abs_tol=tol) or isclose(p0[0], 1.0, abs_tol=tol)):
+        return True
+    if same_y and (isclose(p0[1], 0.0, abs_tol=tol) or isclose(p0[1], 1.0, abs_tol=tol)):
+        return True
+
+    return False
+
+
 def _value_on_grid(value: float, grid: Sequence[float], tol: float) -> bool:
     return any(abs(value - gv) <= tol for gv in grid)
 
@@ -182,6 +194,9 @@ def _normalise_segments(
                 return None, ["point_out_of_bounds"]
             if not _on_unit_boundary(transformed, tol):
                 return None, ["point_not_on_boundary"]
+
+        if _segment_on_boundary_edge(mapped[0], mapped[1], tol):
+            return None, ["segment_on_boundary_edge"]
 
         normalised.append(
             (
