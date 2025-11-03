@@ -21,12 +21,31 @@ from .styles import COLOURS
 
 def _reconstruct_leaves(datagen_args: Mapping[str, Any]) -> list[Leaf]:
     """Reconstruct all leaf geometries from the stored tree parameters."""
-    dim = Dimension.D2 if datagen_args.get("dim") == "D2" else Dimension.D3
+    dim_name = str(datagen_args.get("dimension", datagen_args.get("dim", "2D"))).upper()
+    dim = Dimension.D2 if dim_name == "2D" or dim_name == "D2" else Dimension.D3
     max_depth = int(datagen_args.get("max_depth", 6))
     min_depth = int(datagen_args.get("min_depth", 3))
     split_prob = float(datagen_args.get("split_prob", 0.7))
-    start_axis = datagen_args.get("start_axis", "x")
-    tree_seed = int(datagen_args.get("tree_seed", 0))
+    axis_cycle = datagen_args.get("axis_cycle")
+    if axis_cycle is not None:
+        if isinstance(axis_cycle, list):
+            axis_cycle = tuple(str(axis).lower() for axis in axis_cycle)
+        else:
+            axis_cycle = tuple(str(axis).lower() for axis in axis_cycle)
+    else:
+        start_axis = datagen_args.get("start_axis")
+        default_cycle = ("x", "y") if dim == Dimension.D2 else ("x", "y", "z")
+        if start_axis is not None:
+            start_axis = str(start_axis).lower()
+            if start_axis in default_cycle:
+                index = default_cycle.index(start_axis)
+                axis_cycle = default_cycle[index:] + default_cycle[:index]
+            else:
+                axis_cycle = default_cycle
+        else:
+            axis_cycle = default_cycle
+
+    tree_seed = int(datagen_args.get("tree_seed", datagen_args.get("seed", 0)))
 
     rng = __import__("random").Random(tree_seed)
     from treelib import Tree
@@ -46,7 +65,7 @@ def _reconstruct_leaves(datagen_args: Mapping[str, Any]) -> list[Leaf]:
         max_depth=max_depth,
         min_depth=min_depth,
         split_prob=split_prob,
-        start_axis=start_axis,
+        axis_cycle=axis_cycle,
         dim=dim,
         rng=rng,
     )

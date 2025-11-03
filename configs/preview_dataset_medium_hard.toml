@@ -70,6 +70,6 @@ type = "half_subdivision_neighbours"
 metadata = { tags = ["preview", "geometry", "tree", "subdivision"], requires_visual = false }
 
 datagen_args_grid = [
-  { max_depth = 7, min_depth = 5, split_prob = 0.68, seed = 202, start_axis = "y", dimension = "2D", metadata = { difficulty = "medium" } },
-  { max_depth = 10, min_depth = 7, split_prob = 0.82, seed = 77, start_axis = "z", dimension = "3D", metadata = { difficulty = "hard" } },
+  { max_depth = 9, min_depth = 6, split_prob = 0.35, seed = 42, axis_cycle = ["z", "y", "x", "x", "z"], dimension = "3D", metadata = { difficulty = "hard" } },
+  { max_depth = 7, min_depth = 5, split_prob = 0.75, seed = 2, axis_cycle = ["y", "y", "x", "y", "z"], dimension = "3D", metadata = { difficulty = "medium" } },
 ]

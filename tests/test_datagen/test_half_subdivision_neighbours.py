@@ -19,7 +19,7 @@ class TestPromptGeneration:
         assert "```" in prompt
         assert '""' in prompt
         assert "000" in prompt
-        assert "alternating" in prompt.lower()
+        assert "repeating" in prompt.lower()
 
     def test_make_prompt_deterministic(self):
         """Same args produce identical prompts."""
@@ -73,6 +73,7 @@ class TestSolutionGeneration:
         # Prompts should mention square vs cube and axis rules
         assert "square" in prompt_2d
         assert "cube" in prompt_3d
+        assert "x → y" in prompt_2d
         assert "x → y → z" in prompt_3d
         # Solutions can differ due to different adjacency definitions
         assert isinstance(sol_2d, list) and isinstance(sol_3d, list)
@@ -86,8 +87,25 @@ class TestSolutionGeneration:
         prompt = make_prompt(args)
         solutions = get_solutions(args)
         assert isinstance(solutions, list)
-        # Prompt should still describe the alternating rule (but first split is horizontal)
-        assert "alternating" in prompt.lower()
+        # Prompt should describe the repeating cycle (with first axis now y)
+        assert "repeating" in prompt.lower()
+
+    def test_custom_axis_cycle_reflected_in_prompt_and_runtime(self):
+        """Custom axis cycles appear in prompts and runtime metadata."""
+        axis_cycle = ["y", "z", "z", "x", "y"]
+        args = {
+            "max_depth": 3,
+            "min_depth": 1,
+            "split_prob": 1.0,
+            "seed": 5,
+            "dimension": "3D",
+            "axis_cycle": axis_cycle,
+        }
+        prompt = make_prompt(args)
+        assert "y → z → z → x → y" in prompt
+        record = generate_dataset_record(args)
+        assert record["runtime"]["axis_cycle"] == axis_cycle
+        assert record["datagen_args"]["axis_cycle"] == axis_cycle
 
     def test_3d_face_only_adjacency(self):
         """In 3D, only face-touching voxels count as neighbours (edges/corners excluded)."""
@@ -151,13 +169,36 @@ class TestDatasetRecordGeneration:
     @pytest.mark.parametrize(
         "bad_args,exc,regex",
         [
-            ({}, ValueError, "must include"),
-            ({"max_depth": 5}, ValueError, "must include"),
+            ({}, ValueError, "missing required field"),
+            ({"max_depth": 5}, ValueError, "missing required field"),
             ({"max_depth": -1, "seed": 42, "split_prob": 0.5}, ValueError, "non-negative"),
             ({"max_depth": 5, "seed": 42, "split_prob": 1.5}, ValueError, "within"),
+            ({"max_depth": 3, "seed": 0, "split_prob": 0.5, "dimension": "4D"}, ValueError, "Invalid dimension"),
         ],
     )
     def test_generate_dataset_record_invalid_args(self, bad_args, exc, regex):
         """Invalid arguments raise appropriate exceptions."""
         with pytest.raises(exc, match=regex):
             generate_dataset_record(bad_args)
+
+    def test_invalid_axis_cycle_rejected(self):
+        """Invalid axis cycles are rejected with clear errors."""
+        from visual_geometry_bench.datagen.half_subdivision_neighbours import Dimension, _resolve_axis_cycle
+        
+        # String instead of sequence
+        with pytest.raises(ValueError, match="sequence of axis names, not a string"):
+            _resolve_axis_cycle(Dimension.D2, axis_cycle="xy", start_axis=None)
+        
+        # Invalid axis for dimension
+        with pytest.raises(ValueError, match="invalid axes.*Allowed"):
+            _resolve_axis_cycle(Dimension.D2, axis_cycle=["x", "z"], start_axis=None)
+
+    def test_invalid_target_label_shows_available(self):
+        """Invalid target_label error shows available leaves."""
+        with pytest.raises(ValueError, match="not a leaf in this subdivision.*Available leaves"):
+            generate_dataset_record({
+                "max_depth": 2,
+                "seed": 0,
+                "split_prob": 1.0,
+                "target_label": "999"
+            })
