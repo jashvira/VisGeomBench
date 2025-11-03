@@ -87,7 +87,7 @@ def test_reward_lookup(info_format, sample_records, monkeypatch):
         ),
     )
 
-    reward_fn = vgb_env._make_reward_func("two_segments", lookup)
+    reward_fn = vgb_env._make_reward_func(lookup)
 
     info = info_format()
     assert reward_fn(parser=_DummyParser(), completion="OK", answer="", info=info) == 1.0
@@ -97,10 +97,6 @@ def test_reward_lookup(info_format, sample_records, monkeypatch):
 def test_error_on_unknown_problem_type():
     """Verify that an error is raised for unknown problem types."""
     records = [{"id": "test", "prompt": "test", "metadata": {"problem_type": "unknown_task"}}]
-    
-    # Test _select_verifier raises error
-    with pytest.raises(ValueError, match="Unknown problem type 'unknown_task'"):
-        vgb_env._select_verifier(records)
     
     # Test _format_records raises error
     with pytest.raises(ValueError, match="Unknown problem type 'unknown_task'"):
@@ -112,7 +108,7 @@ def test_error_on_unknown_problem_type():
     
     # Create record with unknown problem type in lookup
     lookup["test"] = {"id": "test", "metadata": {"problem_type": "unknown_task"}}
-    reward_fn = vgb_env._make_reward_func("two_segments", lookup)
+    reward_fn = vgb_env._make_reward_func(lookup)
     
     with pytest.raises(ValueError, match="Unknown problem type 'unknown_task'"):
         reward_fn(parser=_DummyParser(), completion="OK", answer="", info='{"record_token": "test"}')

@@ -1,4 +1,4 @@
-"""Shared style constants for VGBench visualisations."""
+"""Shared style constants for VisGeomBench visualisations."""
 
 from __future__ import annotations
 

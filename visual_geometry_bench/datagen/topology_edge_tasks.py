@@ -347,7 +347,6 @@ def generate_dataset_record(
     record_id: str | None = None,
     tags: list[str] | None = None,
     difficulty: str | None = None,
-    requires_visual: bool = True,
 ) -> dict:
     """Generate a complete evaluation record for topology edge tasks.
 
@@ -364,14 +363,13 @@ def generate_dataset_record(
         record_id: Optional custom ID (otherwise content-addressed hash)
         tags: List of tags for categorisation
         difficulty: Difficulty level string
-        requires_visual: Whether visual reasoning is required
 
     Returns:
         Dictionary with keys:
             - id: str (record identifier)
             - prompt: str (problem statement)
             - ground_truth: list (model's expected answer format)
-            - metadata: dict (problem_type, tags, difficulty, requires_visual)
+            - metadata: dict (problem_type, tags, difficulty)
             - datagen_args: dict (reproducibility arguments)
 
     Raises:
@@ -397,7 +395,6 @@ def generate_dataset_record(
         "problem_type": "topology_edge_tasks",
         "tags": list(set(tags or [])),
         "difficulty": difficulty or "",
-        "requires_visual": bool(requires_visual),
     }
 
     return {

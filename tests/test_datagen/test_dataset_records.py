@@ -25,7 +25,6 @@ class TestDatasetRecordGeneration:
             datagen_args=datagen_args,
             tags=["topology", "visual_reasoning"],
             difficulty="medium",
-            requires_visual=True,
         )
 
         # Check required top-level keys
@@ -39,7 +38,7 @@ class TestDatasetRecordGeneration:
         assert record["metadata"]["problem_type"] == "topology_enumeration"
         assert record["metadata"]["tags"] == ["topology", "visual_reasoning"]
         assert record["metadata"]["difficulty"] == "medium"
-        assert record["metadata"]["requires_visual"] is True
+        assert "requires_visual" not in record["metadata"]
 
         # Check datagen_args preserved
         assert record["datagen_args"] == datagen_args
@@ -142,7 +141,6 @@ class TestMetadataInheritance:
                 "metadata": {
                     "tags": ["topology"],
                     "difficulty": "medium",
-                    "requires_visual": True,
                 },
                 "datagen_args_grid": [
                     {
@@ -156,7 +154,7 @@ class TestMetadataInheritance:
 
         records = build_records_from_config(config)
         assert records[0]["metadata"]["difficulty"] == "hard"  # Overridden
-        assert records[0]["metadata"]["requires_visual"] is True  # Inherited
+        assert "requires_visual" not in records[0]["metadata"]
 
     def test_no_question_metadata_uses_task_defaults(self):
         """Questions without metadata use task-level defaults."""

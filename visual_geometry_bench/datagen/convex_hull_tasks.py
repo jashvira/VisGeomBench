@@ -177,7 +177,6 @@ def generate_dataset_record(
     record_id: str | None = None,
     tags: list[str] | None = None,
     difficulty: str | None = None,
-    requires_visual: bool = True,
 ) -> dict:
     """Generate a complete dataset record for convex hull vertex ordering task.
 
@@ -186,7 +185,6 @@ def generate_dataset_record(
         record_id: Optional custom ID; auto-generated via content hash if None
         tags: Optional list of tags for categorisation
         difficulty: Optional difficulty label
-        requires_visual: Whether task requires visual reasoning (default True)
 
     Returns:
         Dictionary with keys: id, prompt, ground_truth, metadata, datagen_args
@@ -214,7 +212,6 @@ def generate_dataset_record(
         "problem_type": "convex_hull_ordering",
         "tags": list(set(tags or [])),
         "difficulty": difficulty or "",
-        "requires_visual": bool(requires_visual),
     }
 
     return {

@@ -173,7 +173,6 @@ def generate_dataset_record(
     record_id: str | None = None,
     tags: list[str] | None = None,
     difficulty: str | None = None,
-    requires_visual: bool = True,
 ) -> dict:
     """Generate an eval-focused JSON dataset record.
 
@@ -188,7 +187,6 @@ def generate_dataset_record(
         record_id: Optional custom ID (otherwise content-addressed)
         tags: List of tags for categorization
         difficulty: Difficulty level string
-        requires_visual: Whether visual reasoning is required
 
     Returns:
         Dictionary with keys: id, prompt, ground_truth, metadata, datagen_args
@@ -228,7 +226,6 @@ def generate_dataset_record(
             "problem_type": "topology_enumeration",
             "tags": tags or [],
             "difficulty": difficulty,
-            "requires_visual": requires_visual,
         },
         "datagen_args": datagen_args,
     }

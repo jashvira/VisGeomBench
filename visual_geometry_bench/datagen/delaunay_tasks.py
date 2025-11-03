@@ -224,7 +224,6 @@ def generate_dataset_record(
     *,
     tags: list[str] | None = None,
     difficulty: str = "",
-    requires_visual: bool = False,
     record_id: str | None = None,
     metadata: dict | None = None,
 ) -> dict:
@@ -232,7 +231,7 @@ def generate_dataset_record(
 
     Args:
         datagen_args: Point generation parameters (num_points, seed)
-        metadata: Optional metadata overrides (tags, difficulty, requires_visual)
+        metadata: Optional metadata overrides (tags, difficulty)
 
     Returns:
         Dataset record with id, prompt, ground_truth, metadata, datagen_args
@@ -247,10 +246,10 @@ def generate_dataset_record(
         "problem_type": "delaunay_triangulation",
         "tags": merged_tags,
         "difficulty": difficulty,
-        "requires_visual": requires_visual,
     }
     if metadata:
-        record_metadata.update(metadata)
+        filtered_metadata = {k: v for k, v in metadata.items() if k != "requires_visual"}
+        record_metadata.update(filtered_metadata)
 
     content_id = record_id or compute_content_hash(
         problem_type="delaunay_triangulation",

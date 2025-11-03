@@ -62,6 +62,9 @@ def build_records_from_config(cfg: dict) -> list[dict]:
             if task_tags or question_tags:
                 merged_metadata["tags"] = list(set(task_tags) | set(question_tags))
 
+            # Legacy field: generators no longer accept requires_visual
+            merged_metadata.pop("requires_visual", None)
+
             return generator(datagen_args=datagen_args, **merged_metadata)
 
         return list(map(build_record, datagen_args_list))

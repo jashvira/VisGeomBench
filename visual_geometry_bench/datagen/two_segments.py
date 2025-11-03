@@ -143,7 +143,6 @@ def generate_dataset_record(
     record_id: str | None = None,
     tags: list[str] | None = None,
     difficulty: str | None = None,
-    requires_visual: bool = True,
 ) -> dict:
     """Generate dataset record for a two-segment partition specification."""
 
@@ -182,7 +181,6 @@ def generate_dataset_record(
             "problem_type": "two_segments",
             "tags": tags or [],
             "difficulty": difficulty,
-            "requires_visual": requires_visual,
         },
         "datagen_args": record_args,
     }

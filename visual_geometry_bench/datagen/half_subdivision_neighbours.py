@@ -19,12 +19,16 @@ _EPS = 1e-9
 
 
 class Dimension(Enum):
+    """Enumeration of supported spatial dimensions for half subdivisions."""
+
     D2 = 2
     D3 = 3
 
 
 @dataclass(frozen=True, slots=True)
 class Leaf:
+    """Axis-aligned leaf cell with normalised label and bounding box."""
+
     label: str
     x0: float
     y0: float
@@ -34,10 +38,14 @@ class Leaf:
     z1: float = 1.0
 
     def display_label(self) -> str:
+        """Return label formatting empty strings as '""'."""
+
         return self.label if self.label else '""'
 
 
 def _axis_for_depth(depth: int, start_axis: str, dim: Dimension) -> str:
+    """Return the axis to split on at the given depth for the dimension."""
+
     if start_axis not in {"x", "y", "z"}:
         raise ValueError("start_axis must be 'x', 'y', or 'z'")
     if dim == Dimension.D2:
@@ -66,6 +74,8 @@ def _build_subdivision(
     dim: Dimension,
     rng: random.Random,
 ) -> list[Leaf]:
+    """Recursively split the current cell, populating tree nodes and leaves."""
+
     node_id = label if label else "__root__"
     if tree.root is None:
         tree.create_node(tag=Leaf(label, x0, y0, x1, y1, z0, z1).display_label(), identifier=node_id)
@@ -209,10 +219,20 @@ def _build_subdivision(
 
 
 def _overlap(lo1: float, hi1: float, lo2: float, hi2: float) -> bool:
+    """Return True when open intervals overlap beyond the floating tolerance."""
+
     return max(lo1, lo2) < min(hi1, hi2) - _EPS
 
 
 def _are_adjacent(a: Leaf, b: Leaf, dim: Dimension) -> bool:
+    """Return True when two leaves share a face in the chosen dimension.
+
+    Two rectangles (D2) are adjacent if they touch along an edge of non-zero
+    length within the floating tolerance ``_EPS`` along one axis while their
+    extents overlap on the orthogonal axis. In 3-D we extend the rule to
+    cuboids with 6-connectivity: faces coincide (within ``_EPS``) on one axis
+    and their projections overlap on the remaining two axes.
+    """
     if dim == Dimension.D2:
         if abs(a.x1 - b.x0) < _EPS or abs(a.x0 - b.x1) < _EPS:
             return _overlap(a.y0, a.y1, b.y0, b.y1)
@@ -233,6 +253,8 @@ def _are_adjacent(a: Leaf, b: Leaf, dim: Dimension) -> bool:
 
 
 def _normalise_label(label: str | None) -> str | None:
+    """Strip whitespace and map empty sentinel labels to canonical form."""
+
     if label is None:
         return None
     label = label.strip()
@@ -240,6 +262,8 @@ def _normalise_label(label: str | None) -> str | None:
 
 
 def _prepare_case(datagen_args: dict) -> tuple[str, Leaf, list[Leaf], dict]:
+    """Build a deterministic subdivision and return tree text, target, neighbours, runtime."""
+
     if not isinstance(datagen_args, dict):
         raise TypeError("datagen_args must be a dictionary")
 
@@ -352,15 +376,21 @@ List every leaf that shares a face with the target voxel. Return the labels as a
 
 
 def _format_prompt(tree_text: str, target: Leaf, dim: Dimension) -> str:
+    """Render the user-facing prompt for the given subdivision and dimension."""
+
     template = _3D_PROMPT_TEMPLATE if dim == Dimension.D3 else _2D_PROMPT_TEMPLATE
     return template.format(tree_text=tree_text.rstrip(), target_label=target.display_label())
 
 
 def _canonical_labels(leaves: Iterable[Leaf]) -> list[str]:
+    """Extract display labels for a collection of leaves in stable order."""
+
     return [leaf.display_label() for leaf in leaves]
 
 
 def make_prompt(datagen_args: dict) -> str:
+    """Generate a prompt matching the provided half-subdivision configuration."""
+
     tree_text, target, _, runtime = _prepare_case(datagen_args)
     dim_name = runtime["dimension"]
     dim = Dimension.D2 if dim_name == "2D" else Dimension.D3 if dim_name == "3D" else Dimension[dim_name]
@@ -368,6 +398,8 @@ def make_prompt(datagen_args: dict) -> str:
 
 
 def get_solutions(datagen_args: dict) -> list[str]:
+    """Return the canonical neighbour labels for the configured subdivision."""
+
     tree_text, target, neighbours, runtime = _prepare_case(datagen_args)
     _ = tree_text, target, runtime  # unused beyond deterministic generation
     return _canonical_labels(neighbours)
@@ -379,8 +411,19 @@ def generate_dataset_record(
     record_id: str | None = None,
     tags: Sequence[str] | None = None,
     difficulty: str | None = None,
-    requires_visual: bool = False,
 ) -> dict:
+    """Assemble a dataset record with prompt, neighbours, and metadata.
+
+    Args:
+        datagen_args: Data generator arguments.
+        record_id: Record ID (optional).
+        tags: Record tags (optional).
+        difficulty: Record difficulty (optional).
+
+    Returns:
+        dict: The generated dataset record.
+    """
+
     tree_text, target, neighbours, runtime_info = _prepare_case(datagen_args)
     dim_name = runtime_info["dimension"]
     dim = Dimension.D2 if dim_name == "2D" else Dimension.D3 if dim_name == "3D" else Dimension[dim_name]
@@ -388,10 +431,7 @@ def generate_dataset_record(
     prompt = _format_prompt(tree_text, target, dim)
     ground_truth = _canonical_labels(neighbours)
 
-    metadata = {
-        "problem_type": "half_subdivision_neighbours",
-        "requires_visual": requires_visual,
-    }
+    metadata = {"problem_type": "half_subdivision_neighbours"}
     if tags:
         metadata["tags"] = list(tags)
     if difficulty:

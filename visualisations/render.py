@@ -1,4 +1,4 @@
-"""Rendering entry points for VGBench visualisations."""
+"""Rendering entry points for VisGeomBench visualisations."""
 
 from __future__ import annotations
 

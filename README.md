@@ -1,4 +1,4 @@
-# VGBench
+# VisGeomBench
 
 Visual geometry evaluation benchmark for LLMs.
 

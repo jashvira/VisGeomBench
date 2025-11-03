@@ -204,7 +204,7 @@ class TestGenerateDatasetRecord:
         assert record["metadata"]["problem_type"] == "delaunay_triangulation"
         assert "tags" in record["metadata"]
         assert "difficulty" in record["metadata"]
-        assert "requires_visual" in record["metadata"]
+        assert "requires_visual" not in record["metadata"]
 
         # Datagen args preserved
         assert record["datagen_args"] == datagen_args
@@ -228,7 +228,7 @@ class TestGenerateDatasetRecord:
 
         assert record["metadata"]["tags"] == ["custom", "test"]
         assert record["metadata"]["difficulty"] == "hard"
-        assert record["metadata"]["requires_visual"] is True
+        assert "requires_visual" not in record["metadata"]
 
     def test_generate_dataset_record_id_stability(self):
         """Same arguments produce same ID."""

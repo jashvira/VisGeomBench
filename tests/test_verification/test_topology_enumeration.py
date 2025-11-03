@@ -3,7 +3,7 @@
 import pytest
 
 from visual_geometry_bench.datagen.topology_enumeration import generate_dataset_record
-from visual_geometry_bench.verification import verify_topology_enumeration
+from visual_geometry_bench.verification.topology_enumeration import verify_topology_enumeration
 
 
 @pytest.fixture

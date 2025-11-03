@@ -168,7 +168,6 @@ class TestGenerateDatasetRecord:
             datagen_args=datagen_args,
             tags=["geometry", "convex_hull", "geometry"],
             difficulty="medium",
-            requires_visual=True,
         )
 
         # Structure
@@ -179,7 +178,7 @@ class TestGenerateDatasetRecord:
         assert record["metadata"]["problem_type"] == "convex_hull_ordering"
         assert set(record["metadata"]["tags"]) == {"geometry", "convex_hull"}
         assert record["metadata"]["difficulty"] == "medium"
-        assert record["metadata"]["requires_visual"] is True
+        assert "requires_visual" not in record["metadata"]
 
         # Datagen args preserved
         assert record["datagen_args"] == datagen_args
@@ -217,5 +216,5 @@ class TestGenerateDatasetRecord:
         record_default = generate_dataset_record(datagen_args=datagen_args)
         assert record_default["metadata"]["tags"] == []
         assert record_default["metadata"]["difficulty"] == ""
-        assert record_default["metadata"]["requires_visual"] is True
+        assert "requires_visual" not in record_default["metadata"]
 

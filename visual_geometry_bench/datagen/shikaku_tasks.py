@@ -120,7 +120,6 @@ def generate_dataset_record(
     record_id: str | None = None,
     tags: Sequence[str] | None = None,
     difficulty: str | None = None,
-    requires_visual: bool = True,
 ) -> Dict[str, object]:
     """Generate an evaluation record following Visual Geometry Bench schema."""
 
@@ -146,7 +145,6 @@ def generate_dataset_record(
         "problem_type": "shikaku_rectangles",
         "tags": sorted(set(tags or ("shikaku", "rectangles", "grid"))),
         "difficulty": difficulty or "",
-        "requires_visual": bool(requires_visual),
         "grid_shape": [puzzle["height"], puzzle["width"]],
     }
 

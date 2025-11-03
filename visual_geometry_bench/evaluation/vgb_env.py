@@ -1,4 +1,4 @@
-"""VGBench evaluation environment for Verifiers."""
+"""VisGeomBench evaluation environment for Verifiers."""
 
 from __future__ import annotations
 
@@ -28,22 +28,6 @@ def _resolve_dataset_path(dataset_path: str | None) -> str:
             "Missing dataset path. Pass dataset_path or set VGB_DATASET env var."
         )
     return resolved
-
-
-def _select_verifier(records: list[dict[str, Any]]) -> tuple[Callable[[str, dict], bool], str]:
-    """Return verifier function and associated problem type from registry."""
-
-    if not records:
-        raise ValueError("Dataset is empty; cannot infer problem_type for verifier.")
-
-    problem_type = records[0].get("metadata", {}).get("problem_type", "")
-    if problem_type not in TASK_REGISTRY:
-        raise ValueError(
-            f"Unknown problem type '{problem_type}'. "
-            f"Available types: {list(TASK_REGISTRY.keys())}"
-        )
-
-    return get_verifier(problem_type), problem_type
 
 
 def _format_records(
@@ -95,11 +79,7 @@ def _resolve_record(info, record_lookup, default_record):
     return default_record
 
 
-def _make_reward_func(
-    default_verifier: Callable[[str, dict], bool],
-    problem_type: str,
-    record_lookup: dict[str, dict[str, Any]],
-):
+def _make_reward_func(record_lookup: dict[str, dict[str, Any]]):
     """Create reward function compatible with vf.Rubric."""
 
     def reward_func(parser, completion, answer, *, info=None, **_kwargs):
@@ -108,18 +88,14 @@ def _make_reward_func(
             return 0.0
 
         record = _resolve_record(info, record_lookup, {})
-        record_problem = record.get("metadata", {}).get("problem_type", problem_type)
+        record_problem = record.get("metadata", {}).get("problem_type")
 
         if record_problem not in TASK_REGISTRY:
             raise ValueError(
                 f"Unknown problem type '{record_problem}'. Available types: {list(TASK_REGISTRY.keys())}"
             )
 
-        verifier = (
-            default_verifier
-            if record_problem == problem_type
-            else get_verifier(record_problem)
-        )
+        verifier = get_verifier(record_problem)
         needs_gt = task_requires_ground_truth(record_problem)
 
         # Handle ground truth injection
@@ -154,12 +130,11 @@ def load_environment(
 
     path = _resolve_dataset_path(dataset_path)
     raw_records = load_jsonl(path)
-    verifier_fn, problem_type = _select_verifier(raw_records)
 
     dataset_rows, record_lookup = _format_records(raw_records)
     dataset = Dataset.from_list(dataset_rows)
     parser = PythonLiteralParser()
-    reward_func = _make_reward_func(verifier_fn, problem_type, record_lookup)
+    reward_func = _make_reward_func(record_lookup)
     rubric = vf.Rubric(funcs=[reward_func], parser=parser)
 
     return vf.SingleTurnEnv(
