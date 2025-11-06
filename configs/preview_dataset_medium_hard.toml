@@ -4,7 +4,7 @@ schema_version = "1.0"
 
 [[task]]
 type = "topology_enumeration"
-metadata = { tags = ["preview", "topology"], requires_visual = false }
+metadata = { tags = ["preview", "topology"] }
 
 datagen_args_grid = [
   { n_classes = 2, corner_order = ["top-right", "bottom-right", "bottom-left", "top-left"], metadata = { difficulty = "medium" } },
@@ -13,7 +13,7 @@ datagen_args_grid = [
 
 [[task]]
 type = "topology_edge_tasks"
-metadata = { tags = ["preview", "topology", "edges"], requires_visual = false }
+metadata = { tags = ["preview", "topology", "edges"] }
 
 datagen_args_grid = [
   { subtask = "enumerate_edges", corner_order = ["top-right", "bottom-right", "bottom-left", "top-left"], edge_order = ["right", "top", "left", "bottom"], cases = [1, 3, 6, 8], metadata = { difficulty = "medium" } },
@@ -22,7 +22,7 @@ datagen_args_grid = [
 
 [[task]]
 type = "topology_edge_tasks"
-metadata = { tags = ["preview", "topology", "classify"], requires_visual = false }
+metadata = { tags = ["preview", "topology", "classify"] }
 
 datagen_args_grid = [
   { subtask = "classify_behaviour", corner_order = ["top-left", "bottom-left", "bottom-right", "top-right"], cases = [6, 7, 10], metadata = { difficulty = "medium" } },
@@ -31,7 +31,7 @@ datagen_args_grid = [
 
 [[task]]
 type = "convex_hull_ordering"
-metadata = { tags = ["preview", "geometry", "convex-hull"], requires_visual = true }
+metadata = { tags = ["preview", "geometry", "convex-hull"] }
 
 datagen_args_grid = [
   { num_points = 24, seed = 83, metadata = { difficulty = "medium" } },
@@ -40,7 +40,7 @@ datagen_args_grid = [
 
 [[task]]
 type = "delaunay_triangulation"
-metadata = { tags = ["preview", "geometry", "triangulation", "delaunay"], requires_visual = false }
+metadata = { tags = ["preview", "geometry", "triangulation", "delaunay"] }
 
 datagen_args_grid = [
   { num_points = 26, seed = 59, metadata = { difficulty = "medium" } },
@@ -49,7 +49,7 @@ datagen_args_grid = [
 
 [[task]]
 type = "two_segments"
-metadata = { tags = ["preview", "two-segments", "partitioning"], requires_visual = true }
+metadata = { tags = ["preview", "two-segments", "partitioning"] }
 
 datagen_args_grid = [
   { counts = { triangle = 2, quadrilateral = 2, pentagon = 1 }, coordinate_grid = [0.0, 0.17, 0.33, 0.5, 0.67, 0.83, 1.0], snap_decimals = 3, metadata = { difficulty = "medium" } },
@@ -67,7 +67,7 @@ datagen_args_grid = [
 
 [[task]]
 type = "half_subdivision_neighbours"
-metadata = { tags = ["preview", "geometry", "tree", "subdivision"], requires_visual = false }
+metadata = { tags = ["preview", "geometry", "tree", "subdivision"] }
 
 datagen_args_grid = [
   { max_depth = 9, min_depth = 6, split_prob = 0.35, seed = 42, axis_cycle = ["z", "y", "x", "x", "z"], dimension = "3D", metadata = { difficulty = "hard" } },
