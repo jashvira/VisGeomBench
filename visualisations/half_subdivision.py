@@ -480,6 +480,8 @@ def _render_half_subdivision(record: Mapping[str, Any], answer: Any, detail: boo
 
     _enable_leaf_click(fig, interactive_artists)
 
+    plt.show()
+
     return fig
 
 
