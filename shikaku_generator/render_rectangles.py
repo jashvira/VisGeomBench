@@ -93,12 +93,12 @@ def main() -> None:
     parser.add_argument(
         "json_path",
         nargs="?",
-        default="tmp_shikaku/generated/rectangles.json",
+        default="shikaku_generator/generated/rectangles.json",
         help="Path to rectangles.json dataset",
     )
     parser.add_argument(
         "--output-dir",
-        default="tmp_shikaku/generated/solutions",
+        default="shikaku_generator/generated/solutions",
         help="Directory to place rendered images",
     )
     args = parser.parse_args()

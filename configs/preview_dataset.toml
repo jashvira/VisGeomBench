@@ -67,9 +67,9 @@ type = "shikaku_rectangles"
 metadata = { tags = ["preview", "shikaku", "rectangles", "grid"] }
 
 datagen_args_grid = [
-  { dataset_path = "tmp_shikaku/generated/rectangles.json", puzzle_index = 0, metadata = { difficulty = "easy" } },
-  { dataset_path = "tmp_shikaku/generated/rectangles.json", puzzle_index = 24, metadata = { difficulty = "medium" } },
-  { dataset_path = "tmp_shikaku/generated/rectangles.json", puzzle_index = 49, metadata = { difficulty = "hard" } },
+  { dataset_path = "shikaku_generator/generated/rectangles.json", puzzle_index = 0, metadata = { difficulty = "easy" } },
+  { dataset_path = "shikaku_generator/generated/rectangles.json", puzzle_index = 24, metadata = { difficulty = "medium" } },
+  { dataset_path = "shikaku_generator/generated/rectangles.json", puzzle_index = 49, metadata = { difficulty = "hard" } },
 ]
 
 [[task]]

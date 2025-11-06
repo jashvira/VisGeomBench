@@ -56,8 +56,8 @@ outputs/
 --output/
 
 # temp shikaku puzzle artefacts
-tmp_shikaku/rect
-tmp_shikaku/sgt-puzzles_*.deb
+shikaku_generator/rect
+shikaku_generator/sgt-puzzles_*.deb
 
 # scratch Delaunay assets
 tmp_delaunay/

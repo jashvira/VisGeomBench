@@ -10,9 +10,9 @@ import math
 import re
 import subprocess
 import sys
-from collections import defaultdict, deque
+from collections import defaultdict
 from pathlib import Path
-from typing import Dict, Iterable, List, Sequence, Tuple
+from typing import Dict, List, Sequence, Tuple
 
 try:
     from tqdm import tqdm
@@ -26,11 +26,13 @@ GEN.mkdir(parents=True, exist_ok=True)
 RECT = ROOT / "rect"
 
 
-def run(args: Sequence[str], input_str: str = "") -> str:
+def run(command: Sequence[str], input_text: str = "") -> str:
+    """Execute a subprocess command relative to ``ROOT`` and return stdout."""
+
     result = subprocess.run(
-        args,
+        command,
         cwd=str(ROOT),
-        input=input_str,
+        input=input_text,
         text=True,
         capture_output=True,
     )
@@ -41,174 +43,197 @@ def run(args: Sequence[str], input_str: str = "") -> str:
 
 
 def parse_save(path: Path) -> Dict[str, str]:
-    data: Dict[str, str] = {}
+    """Parse a .sav file into a mapping from section keys to payload strings."""
+
+    entries: Dict[str, str] = {}
     for line in path.read_text().splitlines():
-        parts = line.split(":", 2)
-        if len(parts) < 3:
+        tokens = line.split(":", 2)
+        if len(tokens) < 3:
             continue
-        key = parts[0].strip()
-        payload = parts[2]
-        data[key] = payload
-    return data
+        key = tokens[0].strip()
+        payload = tokens[2]
+        entries[key] = payload
+    return entries
 
 
-def mask_xor(buf: bytearray, seed: bytes) -> None:
+def mask_xor(buffer: bytearray, seed: bytes) -> None:
+    """In-place XOR mask using a SHA1-derived keystream seeded by ``seed``."""
+
     digest = b""
-    dpos = 0
+    digest_pos = 0
     counter = 0
-    for j in range(len(buf)):
-        if dpos == 0:
-            h = hashlib.sha1()
-            h.update(seed)
-            h.update(str(counter).encode("ascii"))
-            digest = h.digest()
+    for index in range(len(buffer)):
+        if digest_pos == 0:
+            hasher = hashlib.sha1()
+            hasher.update(seed)
+            hasher.update(str(counter).encode("ascii"))
+            digest = hasher.digest()
             counter += 1
-        buf[j] ^= digest[dpos]
-        dpos = (dpos + 1) % 20
+        buffer[index] ^= digest[digest_pos]
+        digest_pos = (digest_pos + 1) % 20
 
 
 def deobfuscate_bitmap(blob: bytes) -> bytes:
-    bits = len(blob) * 8
-    nbytes = len(blob)
-    first = nbytes // 2
-    second = nbytes - first
-    b = bytearray(blob)
-    seed = bytes(b[:first])
-    tgt = b[first:first + second]
-    mask_xor(tgt, seed)
-    seed = bytes(b[first:first + second])
-    tgt = b[:first]
-    mask_xor(tgt, seed)
-    if bits % 8:
-        b[bits // 8] &= (0xFF00 >> (bits % 8)) & 0xFF
-    return bytes(b)
+    """Reverse the puzzle binary obfuscation described by the RECT solver."""
+
+    bit_count = len(blob) * 8
+    num_bytes = len(blob)
+    first_half = num_bytes // 2
+    second_half = num_bytes - first_half
+    data = bytearray(blob)
+    seed = bytes(data[:first_half])
+    target = data[first_half:first_half + second_half]
+    mask_xor(target, seed)
+    seed = bytes(data[first_half:first_half + second_half])
+    target = data[:first_half]
+    mask_xor(target, seed)
+    if bit_count % 8:
+        data[bit_count // 8] &= (0xFF00 >> (bit_count % 8)) & 0xFF
+    return bytes(data)
 
 
-def decode_desc_grid(body: str, w: int, h: int) -> List[List[int]]:
-    vals: List[int] = []
-    i = 0
-    total = w * h
-    while i < len(body) and len(vals) < total:
-        ch = body[i]
-        i += 1
-        if ch == "_":
+def decode_desc_grid(body: str, width: int, height: int) -> List[List[int]]:
+    """Decode RECT solver body text into a numeric grid of clues and blanks."""
+
+    decoded: List[int] = []
+    cursor = 0
+    total_cells = width * height
+    while cursor < len(body) and len(decoded) < total_cells:
+        char = body[cursor]
+        cursor += 1
+        if char == "_":
             continue
-        if "a" <= ch <= "z":
-            runlen = ord(ch) - ord("a") + 1
-            vals.extend([0] * runlen)
+        if "a" <= char <= "z":
+            run_length = ord(char) - ord("a") + 1
+            decoded.extend([0] * run_length)
         else:
-            num = ch
-            while i < len(body) and body[i].isdigit():
-                num += body[i]
-                i += 1
-            vals.append(int(num))
-    if len(vals) != total:
+            digits = char
+            while cursor < len(body) and body[cursor].isdigit():
+                digits += body[cursor]
+                cursor += 1
+            decoded.append(int(digits))
+    if len(decoded) != total_cells:
         raise SystemExit("decoded cell count mismatch")
-    return [vals[r * w:(r + 1) * w] for r in range(h)]
+    return [decoded[row * width:(row + 1) * width] for row in range(height)]
 
 
-def parse_aux_solution(aux: str, w: int, h: int) -> Tuple[List[List[int]], List[List[int]]]:
-    if not aux or not aux.startswith("S"):
+def parse_aux_solution(solution_data: str, width: int, height: int) -> Tuple[List[List[int]], List[List[int]]]:
+    """Decode auxiliary solution text into vertical and horizontal edge masks."""
+
+    if not solution_data or not solution_data.startswith("S"):
         return [], []
-    s = aux[1:]
-    n_v = (w - 1) * h
-    n_h = (h - 1) * w
-    if len(s) != n_v + n_h:
+    edge_flags = solution_data[1:]
+    vertical_edge_count = (width - 1) * height
+    horizontal_edge_count = (height - 1) * width
+    if len(edge_flags) != vertical_edge_count + horizontal_edge_count:
         return [], []
-    vs = s[:n_v]
-    hs = s[n_v:]
-    edges_v = [[1 if vs[r * (w - 1) + c] == "1" else 0 for c in range(w - 1)] for r in range(h)]
-    edges_h = [[1 if hs[r * w + c] == "1" else 0 for c in range(w)] for r in range(h - 1)]
+    vertical_flags = edge_flags[:vertical_edge_count]
+    horizontal_flags = edge_flags[vertical_edge_count:]
+    edges_v = [
+        [1 if vertical_flags[row * (width - 1) + col] == "1" else 0 for col in range(width - 1)]
+        for row in range(height)
+    ]
+    edges_h = [
+        [1 if horizontal_flags[row * width + col] == "1" else 0 for col in range(width)]
+        for row in range(height - 1)
+    ]
     return edges_v, edges_h
 
 
 def rectangles_from_edges(
-    numbers: Sequence[Sequence[int]],
-    edges_v: Sequence[Sequence[int]],
-    edges_h: Sequence[Sequence[int]],
+    clue_grid: Sequence[Sequence[int]],
+    vertical_edges: Sequence[Sequence[int]],
+    horizontal_edges: Sequence[Sequence[int]],
 ) -> Tuple[List[List[int]], List[Dict[str, object]]]:
-    h = len(numbers)
-    w = len(numbers[0]) if numbers else 0
-    region_map = [[-1] * w for _ in range(h)]
+    """Assemble regions into rectangles using edge masks produced by RECT."""
+
+    height = len(clue_grid)
+    width = len(clue_grid[0]) if clue_grid else 0
+
+    if height == 0 or width == 0:
+        empty_map = [[-1] * width for _ in range(height)]
+        return empty_map, []
+
+    region_map = [[-1] * width for _ in range(height)]
     rectangles: List[Dict[str, object]] = []
 
-    def neighbors(r: int, c: int) -> Iterable[Tuple[int, int]]:
-        if c + 1 < w and (not edges_v or edges_v[r][c] == 0):
-            yield r, c + 1
-        if c - 1 >= 0 and (not edges_v or edges_v[r][c - 1] == 0):
-            yield r, c - 1
-        if r + 1 < h and (not edges_h or edges_h[r][c] == 0):
-            yield r + 1, c
-        if r - 1 >= 0 and (not edges_h or edges_h[r - 1][c] == 0):
-            yield r - 1, c
-
-    current_id = 0
-    for r in range(h):
-        for c in range(w):
-            if region_map[r][c] != -1:
+    rectangle_id = 0
+    for row in range(height):
+        for col in range(width):
+            if region_map[row][col] != -1:
                 continue
-            queue: deque[Tuple[int, int]] = deque([(r, c)])
-            region_map[r][c] = current_id
-            cells: List[Tuple[int, int]] = [(r, c)]
-            while queue:
-                rr, cc = queue.popleft()
-                for nr, nc in neighbors(rr, cc):
-                    if region_map[nr][nc] == -1:
-                        region_map[nr][nc] = current_id
-                        queue.append((nr, nc))
-                        cells.append((nr, nc))
 
-            rows = [rr for rr, _ in cells]
-            cols = [cc for _, cc in cells]
-            top, bottom = min(rows), max(rows)
-            left, right = min(cols), max(cols)
-            width = right - left + 1
-            height = bottom - top + 1
-            area = width * height
+            top = row
+            left = col
+            right = col
+            while right < width - 1 and vertical_edges[top][right] == 0:
+                right += 1
+
+            bottom = row
+            while bottom < height - 1 and horizontal_edges[bottom][left] == 0:
+                bottom += 1
+
+            cells: List[Tuple[int, int]] = []
             clue = 0
-            for rr, cc in cells:
-                if numbers[rr][cc]:
-                    clue = numbers[rr][cc]
-                    break
+            for r in range(top, bottom + 1):
+                for c in range(left, right + 1):
+                    if region_map[r][c] != -1:
+                        raise ValueError("cell already assigned to a rectangle")
+                    region_map[r][c] = rectangle_id
+                    cells.append((r, c))
+                    val = clue_grid[r][c]
+                    if val:
+                        clue = val
+
+            rect_width = right - left + 1
+            rect_height = bottom - top + 1
+            area = rect_width * rect_height
+
             rectangles.append(
                 {
-                    "id": current_id,
+                    "id": rectangle_id,
                     "top": top,
                     "left": left,
-                    "width": width,
-                    "height": height,
+                    "width": rect_width,
+                    "height": rect_height,
                     "area": area,
                     "clue": clue,
                     "cells": cells,
                 }
             )
-            current_id += 1
+            rectangle_id += 1
 
     return region_map, rectangles
 
 
 def distribute_counts(min_size: int, max_size: int, total: int) -> Dict[int, int]:
+    """Spread ``total`` puzzles evenly across size buckets within bounds."""
+
     sizes = list(range(min_size, max_size + 1))
-    base = total // len(sizes)
+    base_quota = total // len(sizes)
     remainder = total % len(sizes)
-    counts: Dict[int, int] = {s: base for s in sizes}
-    for idx, size in enumerate(sizes):
-        if idx < remainder:
+    counts: Dict[int, int] = {size: base_quota for size in sizes}
+    for index, size in enumerate(sizes):
+        if index < remainder:
             counts[size] += 1
     return counts
 
 
 def generate_ids(counts: Dict[int, int], rect_exec: str) -> List[str]:
-    ids: List[str] = []
-    for size, qty in tqdm(counts.items(), desc="Generating IDs", unit="size"):
-        if qty <= 0:
+    """Request puzzle IDs from the RECT solver for each size bucket."""
+
+    puzzle_ids: List[str] = []
+    for size, quantity in tqdm(counts.items(), desc="Generating IDs", unit="size"):
+        if quantity <= 0:
             continue
-        out = run([rect_exec, "--generate", str(qty), f"{size}x{size}"])
-        ids.extend(line.strip() for line in out.splitlines() if line.strip())
-    return ids
+        output = run([rect_exec, "--generate", str(quantity), f"{size}x{size}"])
+        puzzle_ids.extend(line.strip() for line in output.splitlines() if line.strip())
+    return puzzle_ids
 
 
 def main() -> None:
+    """Command-line entry point generating puzzles and serialising summaries."""
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--count", type=int, default=50, help="total puzzles to generate")
     parser.add_argument("--min-size", type=int, default=5, help="minimum grid size (square)")
