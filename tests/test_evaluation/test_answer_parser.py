@@ -139,6 +139,32 @@ class TestPythonLiteralParser:
         result = parser.parse_answer(text)
         assert result == "[(0, 1, 0, 1)]"
 
+    def test_strip_thinking_blocks_before_parsing(self, parser):
+        """Content inside <thinking> tags is ignored."""
+        text = """
+        <thinking>
+        [123, 456]  # scratch work
+        </thinking>
+        assistant: 1100110, 11100, 1110101, 1110111
+        """
+        result = parser.parse_answer(text)
+        assert result is not None
+        parsed = ast.literal_eval(result)
+        assert list(map(str, parsed)) == ["1100110", "11100", "1110101", "1110111"]
+
+    def test_simple_sequence_preferred_over_backscan(self, parser):
+        """Trailing comma list wins even if earlier text has brackets."""
+        text = """
+        Reasoning with bbox x:[0.1,0.2], y:[0.3,0.4]
+
+        Final neighbours:
+        010, 011, 100
+        """
+        result = parser.parse_answer(text)
+        assert result is not None
+        parsed = ast.literal_eval(result)
+        assert list(map(str, parsed)) == ["010", "011", "100"]
+
     
     def test_code_fence_priority_over_backscan(self, parser):
         """Test that code fence is tried before backscan."""
@@ -194,4 +220,3 @@ class TestPythonLiteralParser:
         assert result is not None
         parsed = ast.literal_eval(result)
         assert list(map(str, parsed)) == ["0000", "0001", "0010"]
-

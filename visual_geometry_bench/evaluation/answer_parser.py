@@ -40,6 +40,7 @@ class PythonLiteralParser(vf.Parser):
             text = completion[-1]["content"] if completion else ""
 
         text = self._normalise_text(text)
+        text = self._strip_thinking_blocks(text)
 
         if not text:
             return None
@@ -49,19 +50,21 @@ class PythonLiteralParser(vf.Parser):
         if code_fence and self._is_valid_literal(code_fence):
             return code_fence.strip()
 
-        # Strategy 2: Backscan for last balanced bracket structure
-        backscanned = self._backscan_literal(text)
-        if backscanned and self._is_valid_literal(backscanned):
-            return backscanned.strip()
-
-        # Strategy 3: Try parsing whole text if it looks clean
         stripped = text.strip()
+
+        # Strategy 2: Try parsing whole text if it looks clean
         if self._is_valid_literal(stripped):
             return stripped
 
+        # Strategy 3: Trailing comma-delimited sequences (no brackets)
         simple_list = self._parse_simple_sequence(stripped)
         if simple_list is not None:
             return simple_list
+
+        # Strategy 4: Backscan for last balanced bracket structure
+        backscanned = self._backscan_literal(text)
+        if backscanned and self._is_valid_literal(backscanned):
+            return backscanned.strip()
 
         return None
 
@@ -228,3 +231,10 @@ class PythonLiteralParser(vf.Parser):
         })
         return text.translate(translation_table)
 
+    def _strip_thinking_blocks(self, text: str) -> str:
+        """Remove <thinking>...</thinking> blocks to ignore CoT scratch space."""
+
+        if not text:
+            return text
+        pattern = re.compile(r"<thinking>.*?</thinking>", re.IGNORECASE | re.DOTALL)
+        return re.sub(pattern, "", text)
