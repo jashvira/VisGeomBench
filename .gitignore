@@ -59,4 +59,4 @@ outputs/
 # temp shikaku puzzle artefacts
 shikaku_generator/rect
 shikaku_generator/sgt-puzzles_*.deb
-
+shikaku_generator/puzzles/

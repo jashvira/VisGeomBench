@@ -55,3 +55,21 @@ uv run vf-eval visual_geometry_bench.evaluation \
 ```
 
 Flags: `-n` examples, `-r` rollouts per example, `-c` max concurrent, `-s` save outputs.
+
+## Third-Party Components
+
+The Shikaku task depends on Simon Tatham's Portable Puzzle Collection (MIT License).
+Fetch the sources (≈30 MB) with the helper script, then build the `rect` generator
+with CMake (requires any C compiler + CMake ≥3.16):
+
+```bash
+uv run python scripts/fetch_shikaku_puzzles.py
+cd shikaku_generator/puzzles
+cmake -S . -B build
+cmake --build build --target rect
+cp build/rect ..
+```
+
+The resulting executable is ignored in git; use `shikaku_generator/build_rectangles_json.py`
+to regenerate puzzle JSON once the binary is available. The upstream licence text is
+provided in `third_party/sgt-puzzles-LICENCE`.
