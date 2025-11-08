@@ -157,15 +157,19 @@ def _render_topology_edge(
 ) -> plt.Figure:
     _ = show
     datagen_args = record.get("datagen_args", {})
-    corner_order = datagen_args.get("corner_order", _DEFAULT_CORNER_ORDER)
-    edge_order = datagen_args.get("edge_order", _DEFAULT_EDGE_ORDER)
+    corner_order_raw = datagen_args.get("corner_order", _DEFAULT_CORNER_ORDER)
+    edge_order_raw = datagen_args.get("edge_order", _DEFAULT_EDGE_ORDER)
+    corner_order_tuple = tuple(corner_order_raw)
+    edge_order_tuple = tuple(edge_order_raw)
+    corner_order_display = list(corner_order_tuple)
+    edge_order_display = list(edge_order_tuple)
     subtask = datagen_args.get("subtask", "enumerate_edges")
 
-    resolved_cases = _resolved_cases_from_args(datagen_args, corner_order)
+    resolved_cases = _resolved_cases_from_args(datagen_args, corner_order_tuple)
     cases: list[tuple[int, int, int, int]] = list(resolved_cases or [])
-    corner_order = datagen_args.get("corner_order", _DEFAULT_CORNER_ORDER)
     is_classify = subtask == "classify_behaviour"
-    ground_truth = record.get("ground_truth") or []
+    ground_truth_raw = record.get("ground_truth") or []
+    ground_truth = list(ground_truth_raw) if isinstance(ground_truth_raw, list) else [ground_truth_raw]
 
     if not cases or not all(isinstance(c, (list, tuple)) and len(c) >= 4 for c in cases):
         prompt = record.get("prompt", "")
@@ -188,12 +192,19 @@ def _render_topology_edge(
         parsed_answer = [[] for _ in cases]
 
     num_cases = max(len(cases), len(ground_truth), len(parsed_answer))
-    while len(cases) < num_cases:
-        cases.append(tuple([0, 0, 0, 0]))
-    while len(ground_truth) < num_cases:
-        ground_truth.append("" if is_classify else [])
-    while len(parsed_answer) < num_cases:
-        parsed_answer.append("" if is_classify else [])
+
+    def _padded(seq: list[Any], fill: Any) -> list[Any]:
+        if len(seq) >= num_cases:
+            return list(seq)
+        return list(seq) + [fill] * (num_cases - len(seq))
+
+    default_case = (0, 0, 0, 0)
+    default_gt = "" if is_classify else []
+    default_ans = "" if is_classify else []
+
+    cases = _padded(cases, default_case)
+    ground_truth = _padded(ground_truth, default_gt)
+    parsed_answer = _padded(parsed_answer, default_ans)
 
     ncols = min(3, max(1, num_cases))
     nrows = math.ceil(num_cases / ncols)
@@ -209,8 +220,8 @@ def _render_topology_edge(
     fig.patch.set_facecolor("white")
 
     config_caption = (
-        f"Corner order: {tuple(corner_order)} • "
-        f"Edge order: {tuple(edge_order)}"
+        f"Corner order: {corner_order_tuple} • "
+        f"Edge order: {edge_order_tuple}"
     )
     fig.text(
         0.5,
@@ -226,14 +237,12 @@ def _render_topology_edge(
         axes = np.array([axes])
     axes = axes.flatten()
 
-    edge_order_tuple = tuple(edge_order)
     try:
         datagen_edge_index_map(edge_order_tuple)
     except ValueError:
         edge_order_tuple = tuple(_DEFAULT_EDGE_ORDER)
         datagen_edge_index_map(edge_order_tuple)
 
-    corner_order_tuple = tuple(corner_order)
     legend_handles: list[Any] | None = None
     legend_labels: list[str] | None = None
 
@@ -278,8 +287,8 @@ def _render_topology_edge(
         edge_centers = _draw_square_with_labels(
             ax,
             case_labels,
-            corner_order,
-            edge_order,
+            corner_order_display,
+            edge_order_display,
             title_text,
         )
 
@@ -296,7 +305,7 @@ def _render_topology_edge(
         if triple_spokes:
             _draw_triple_spokes(ax, edge_centers, triple_spokes, COLOURS["truth"])
 
-        if not is_classify:
+        if not is_classify:  # Classify tasks deliberately omit model overlays
             _draw_edge_connections(
                 ax,
                 ans_connections,
