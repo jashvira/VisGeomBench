@@ -96,7 +96,13 @@ def _draw_triangles(ax: plt.Axes, points: np.ndarray, triangles: Sequence[Sequen
         ax.plot(coords[:, 0], coords[:, 1], color=color, linewidth=2, zorder=2, alpha=0.8)
 
 
-def _render_convex_hull(record: Mapping[str, Any], answer: Any, detail: bool) -> plt.Figure:
+def _render_convex_hull(
+    record: Mapping[str, Any],
+    answer: Any,
+    detail: bool,
+    *,
+    show: bool | None = None,
+) -> plt.Figure:
     points = np.array(_convex_to_points(record["datagen_args"]), dtype=float)
     ground_truth = record.get("ground_truth") or []
 
@@ -126,7 +132,13 @@ def _render_convex_hull(record: Mapping[str, Any], answer: Any, detail: bool) ->
     return fig
 
 
-def _render_delaunay(record: Mapping[str, Any], answer: Any, detail: bool) -> plt.Figure:
+def _render_delaunay(
+    record: Mapping[str, Any],
+    answer: Any,
+    detail: bool,
+    *,
+    show: bool | None = None,
+) -> plt.Figure:
     points = np.array(_delaunay_to_points(record["datagen_args"]), dtype=float)
     ground_truth = record.get("ground_truth") or []
 

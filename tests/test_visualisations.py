@@ -63,12 +63,12 @@ def test_visualise_record_dispatch_and_save(tmp_path: Path) -> None:
         "metadata": {"problem_type": "dummy_task"},
     }
 
-    result = visualise_record(record, answer={"foo": 1}, reward=0.5)
+    result = visualise_record(record, answer={"foo": 1})
     assert isinstance(result, plt.Figure)
     assert result.axes[0].get_title() == "abc123"
 
     save_dir = tmp_path / "viz"
-    visualise_record(record, answer=None, save_dir=save_dir, reward=1.0, output_stub="007")
+    visualise_record(record, answer=None, save_dir=save_dir, output_stub="007")
 
     saved_file = save_dir / "007.png"
     assert saved_file.exists()
@@ -88,7 +88,7 @@ def test_convex_hull_renderer_generates_figure(renderers_ready):
         "ground_truth": hull_indices,
     }
 
-    fig = visualise_record(record, hull_indices, reward=1.0)
+    fig = visualise_record(record, hull_indices)
     assert isinstance(fig, plt.Figure)
     assert len(fig.axes) == 2
     plt.close(fig)
@@ -106,7 +106,7 @@ def test_delaunay_renderer_generates_figure(renderers_ready):
         "ground_truth": triangulation,
     }
 
-    fig = visualise_record(record, triangulation, reward=0.0)
+    fig = visualise_record(record, triangulation)
     assert isinstance(fig, plt.Figure)
     assert len(fig.axes) == 2
     plt.close(fig)
@@ -126,7 +126,7 @@ def test_topology_renderers_generate_figures(renderers_ready):
         "ground_truth": [[], [[1, 3]]],
     }
 
-    edge_fig = visualise_record(edge_record, edge_record["ground_truth"], reward=1.0)
+    edge_fig = visualise_record(edge_record, edge_record["ground_truth"])
     assert isinstance(edge_fig, plt.Figure)
     plt.close(edge_fig)
 
@@ -137,7 +137,7 @@ def test_topology_renderers_generate_figures(renderers_ready):
         "ground_truth": [[0, 1, 0, 1], [1, 0, 0, 1]],
     }
 
-    enum_fig = visualise_record(enumeration_record, enumeration_record["ground_truth"], reward=0.5)
+    enum_fig = visualise_record(enumeration_record, enumeration_record["ground_truth"])
     assert isinstance(enum_fig, plt.Figure)
     plt.close(enum_fig)
 
@@ -155,7 +155,7 @@ def test_two_segments_renderer_generates_figure(renderers_ready):
     }
     answer = [((0.0, 0.0), (1.0, 1.0)), ((1.0, 0.0), (0.0, 1.0))]
 
-    fig = visualise_record(record, answer, reward=0.75)
+    fig = visualise_record(record, answer)
     assert isinstance(fig, plt.Figure)
     plt.close(fig)
 

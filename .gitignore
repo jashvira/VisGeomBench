@@ -46,6 +46,7 @@ htmlcov/
 # Project specific
 data/*.jsonl
 data/*.md
+data/figures/
 !data/.gitkeep
 *.log
 

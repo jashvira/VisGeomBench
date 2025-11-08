@@ -7,7 +7,7 @@ from typing import Any, Callable, Mapping
 
 import matplotlib.pyplot as plt
 
-from .styles import apply_matplotlib_style, decorate_with_reward
+from .styles import COLOURS, apply_matplotlib_style
 
 RendererResult = plt.Figure | Mapping[str, plt.Figure]
 Renderer = Callable[[dict[str, Any], Any, bool], RendererResult]
@@ -31,7 +31,6 @@ def visualise_record(
     detail: bool = False,
     save_dir: str | Path | None = None,
     fmt: str = "png",
-    reward: Any | None = None,
     output_stub: str | None = None,
     metadata_caption: str | None = None,
     show: bool | None = None,
@@ -50,16 +49,25 @@ def visualise_record(
 
     result = renderer(record, answer, detail, show=show)
 
-    def _decorate(fig: plt.Figure) -> None:
-        axes = list(fig.axes)
-        decorate_with_reward(fig, axes, reward, metadata_caption=metadata_caption)
+    def _apply_metadata_caption(fig: plt.Figure) -> None:
+        if not metadata_caption:
+            return
+        fig.text(
+            0.5,
+            0.02,
+            metadata_caption,
+            ha="center",
+            va="bottom",
+            fontsize=11,
+            color=COLOURS["annotation"],
+        )
 
     if isinstance(result, Mapping):
         for fig in result.values():
             if isinstance(fig, plt.Figure):
-                _decorate(fig)
+                _apply_metadata_caption(fig)
     elif isinstance(result, plt.Figure):
-        _decorate(result)
+        _apply_metadata_caption(result)
 
     if save_dir is not None:
         save_dir = Path(save_dir)

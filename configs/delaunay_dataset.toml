@@ -1,0 +1,15 @@
+[dataset]
+output = "data/delaunay_dataset.jsonl"
+schema_version = "1.0"
+
+[[task]]
+type = "delaunay_triangulation"
+metadata = { tags = ["geometry", "triangulation", "delaunay", "curated"], difficulty = "mixed" }
+
+datagen_args_grid = [
+  { num_points = 6, seed = 10, metadata = { difficulty = "easy" } },
+  { num_points = 8, seed = 33, metadata = { difficulty = "easy" } },
+  { num_points = 9, seed = 47, metadata = { difficulty = "easy" } },
+  { num_points = 15, seed = 221, metadata = { difficulty = "medium" } },
+  { num_points = 25, seed = 997, metadata = { difficulty = "hard" } },
+]

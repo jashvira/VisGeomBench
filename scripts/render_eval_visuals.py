@@ -117,7 +117,6 @@ def render_results(results_path: Path, output_dir: Path, fmt: str, detail: bool,
             continue
 
         answer = _extract_answer(row, parser)
-        reward = row.get("reward")
         try:
             visualise_record(
                 record,
@@ -125,7 +124,6 @@ def render_results(results_path: Path, output_dir: Path, fmt: str, detail: bool,
                 detail=detail,
                 save_dir=target_dir,
                 fmt=fmt,
-                reward=reward,
                 output_stub=f"{question_number:03d}",
                 metadata_caption=metadata_caption,
             )
@@ -140,7 +138,6 @@ def render_results(results_path: Path, output_dir: Path, fmt: str, detail: bool,
                     detail=detail,
                     save_dir=target_dir,
                     fmt=fmt,
-                    reward=reward,
                     output_stub=f"{question_number:03d}",
                     metadata_caption=metadata_caption,
                 )
