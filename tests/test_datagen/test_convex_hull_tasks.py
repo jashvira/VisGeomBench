@@ -1,6 +1,7 @@
 """Tests for convex hull ordering task generation."""
 
 import json
+import math
 
 import numpy as np
 import pytest
@@ -9,6 +10,7 @@ from scipy.spatial import ConvexHull as SciPyConvexHull
 from visual_geometry_bench.datagen.convex_hull_tasks import (
     _compute_convex_hull,
     _gen_convex_points,
+    _gen_circle_points,
     _hull_to_canonical_indices,
     _to_points,
     generate_dataset_record,
@@ -67,6 +69,56 @@ class TestToPoints:
     def test_to_points_invalid_args(self, bad_args, exc, regex):
         with pytest.raises(exc, match=regex):
             _to_points(bad_args)
+
+    def test_to_points_circle_distribution(self):
+        args = {"num_points": 12, "seed": 99, "point_distribution": "circle"}
+        points = _to_points(args)
+        assert len(points) == args["num_points"]
+
+    def test_to_points_invalid_distribution_raises(self):
+        args = {"num_points": 5, "seed": 1, "point_distribution": "unknown"}
+        with pytest.raises(ValueError, match="unsupported point_distribution"):
+            _to_points(args)
+
+
+class TestCirclePointGeneration:
+    """Tests specific to the circle distribution."""
+
+    def _estimate_circle(self, points):
+        pts = np.asarray(points, dtype=float)
+        n = len(pts)
+        for i in range(n - 2):
+            for j in range(i + 1, n - 1):
+                for k in range(j + 1, n):
+                    subset = pts[[i, j, k]]
+                    A = np.column_stack((subset[:, 0], subset[:, 1], np.ones(3)))
+                    b = -(subset[:, 0] ** 2 + subset[:, 1] ** 2)
+                    det = float(np.linalg.det(A))
+                    if abs(det) < 1e-10:
+                        continue
+                    sol = np.linalg.solve(A, b)
+                    a, b_param, c = sol
+                    cx = float(-0.5 * a)
+                    cy = float(-0.5 * b_param)
+                    radius = math.sqrt(max(cx * cx + cy * cy - c, 0.0))
+                    return cx, cy, radius
+        raise AssertionError("could not estimate circle from provided points")
+
+    def test_circle_points_share_common_radius(self):
+        points = _gen_circle_points(num_points=16, random_seed=7)
+        cx, cy, radius = self._estimate_circle(points[:8])
+
+        for x, y in points:
+            dist = math.hypot(x - cx, y - cy)
+            assert math.isclose(dist, radius, rel_tol=1e-6, abs_tol=1e-9)
+
+    def test_circle_points_deterministic_by_seed(self):
+        pts1 = _gen_circle_points(10, 1234)
+        pts2 = _gen_circle_points(10, 1234)
+        assert pts1 == pts2
+
+    def test_circle_points_vary_with_seed(self):
+        assert _gen_circle_points(10, 1) != _gen_circle_points(10, 2)
 
 
 class TestComputeConvexHull:
@@ -158,6 +210,12 @@ class TestGetSolutions:
         assert all(0 <= idx < datagen_args["num_points"] for idx in solutions)
         assert len(solutions) >= 3
 
+    def test_get_solutions_circle_includes_all_points(self):
+        datagen_args = {"num_points": 12, "seed": 555, "point_distribution": "circle"}
+        solutions = get_solutions(datagen_args)
+        assert len(solutions) == datagen_args["num_points"]
+        assert sorted(solutions) == list(range(datagen_args["num_points"]))
+
 
 class TestGenerateDatasetRecord:
     """Test dataset record generation."""
@@ -178,6 +236,7 @@ class TestGenerateDatasetRecord:
         assert record["metadata"]["problem_type"] == "convex_hull_ordering"
         assert set(record["metadata"]["tags"]) == {"geometry", "convex_hull"}
         assert record["metadata"]["difficulty"] == "medium"
+        assert record["metadata"]["point_distribution"] == "default"
         assert "requires_visual" not in record["metadata"]
 
         # Datagen args preserved
@@ -218,3 +277,9 @@ class TestGenerateDatasetRecord:
         assert record_default["metadata"]["difficulty"] == ""
         assert "requires_visual" not in record_default["metadata"]
 
+    def test_generate_dataset_record_circle_tags_and_metadata(self):
+        datagen_args = {"num_points": 9, "seed": 101, "point_distribution": "circle"}
+        record = generate_dataset_record(datagen_args=datagen_args, tags=["geometry"])
+
+        assert record["metadata"]["point_distribution"] == "circle"
+        assert set(record["metadata"]["tags"]) == {"geometry", "circle"}

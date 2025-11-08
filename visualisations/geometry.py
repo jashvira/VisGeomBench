@@ -21,6 +21,8 @@ _FRIENDLY_TITLES = {
     "delaunay_triangulation": "Delaunay Triangulation",
 }
 
+DEFAULT_VIEW_LIMITS = (-0.08, 1.08)
+
 
 def _format_problem_title(record: Mapping[str, Any]) -> str:
     metadata = record.get("metadata", {}) if isinstance(record, Mapping) else {}
@@ -39,8 +41,8 @@ def _make_two_panel(record: Mapping[str, Any]) -> tuple[plt.Figure, list[plt.Axe
     for ax, title in zip(axes, ("Ground truth", "Answer"), strict=True):
         ax.set_title(title, fontsize=13, weight="semibold", pad=10)
         ax.set_aspect("equal")
-        ax.set_xlim(-0.08, 1.08)
-        ax.set_ylim(-0.08, 1.08)
+        ax.set_xlim(*DEFAULT_VIEW_LIMITS)
+        ax.set_ylim(*DEFAULT_VIEW_LIMITS)
         ax.grid(True, linestyle="--", linewidth=0.3, alpha=0.3, color="#CCCCCC")
         ax.set_facecolor("#FAFAFA")
     return fig, list(axes)
@@ -122,6 +124,41 @@ def _draw_triangles(ax: plt.Axes, points: np.ndarray, triangles: Sequence[Sequen
         ax.plot(coords[:, 0], coords[:, 1], color=color, linewidth=2, zorder=2, alpha=0.8)
 
 
+def _infer_circle_params(points: np.ndarray) -> tuple[np.ndarray, float]:
+    center = points.mean(axis=0)
+    radius = float(np.mean(np.linalg.norm(points - center, axis=1)))
+    return center, radius
+
+
+def _circle_bounds(center: np.ndarray, radius: float, *, pad_ratio: float = 0.25) -> tuple[tuple[float, float], tuple[float, float]]:
+    pad = radius * pad_ratio
+    x_min = float(center[0] - radius - pad)
+    x_max = float(center[0] + radius + pad)
+    y_min = float(center[1] - radius - pad)
+    y_max = float(center[1] + radius + pad)
+
+    # Keep the zoom within global defaults to avoid clipping metadata annotations.
+    lo, hi = DEFAULT_VIEW_LIMITS
+    x_min = max(lo, x_min)
+    y_min = max(lo, y_min)
+    x_max = min(hi, x_max)
+    y_max = min(hi, y_max)
+    return (x_min, x_max), (y_min, y_max)
+
+
+def _apply_circle_axes(ax: plt.Axes, center: np.ndarray, radius: float) -> None:
+    (x_min, x_max), (y_min, y_max) = _circle_bounds(center, radius)
+    ax.set_xlim(x_min, x_max)
+    ax.set_ylim(y_min, y_max)
+
+
+def _draw_circle_outline(ax: plt.Axes, center: np.ndarray, radius: float, *, color: str, alpha: float, zorder: float) -> None:
+    theta = np.linspace(0.0, 2.0 * np.pi, 256)
+    xs = center[0] + radius * np.cos(theta)
+    ys = center[1] + radius * np.sin(theta)
+    ax.plot(xs, ys, color=color, linestyle="--", linewidth=1.5, alpha=alpha, zorder=zorder)
+
+
 def _render_convex_hull(
     record: Mapping[str, Any],
     answer: Any,
@@ -131,8 +168,23 @@ def _render_convex_hull(
 ) -> plt.Figure:
     points = np.array(_convex_to_points(record["datagen_args"]), dtype=float)
     ground_truth = record.get("ground_truth") or []
+    metadata = record.get("metadata", {}) if isinstance(record, Mapping) else {}
+    datagen_args = record.get("datagen_args", {}) if isinstance(record, Mapping) else {}
+    point_distribution = metadata.get("point_distribution") or datagen_args.get("point_distribution", "")
+    is_circle = point_distribution == "circle"
+    circle_params = _infer_circle_params(points) if is_circle else None
 
     fig, (ax_gt, ax_ans) = _make_two_panel(record)
+    if circle_params:
+        for ax in (ax_gt, ax_ans):
+            _apply_circle_axes(ax, *circle_params)
+            _draw_circle_outline(
+                ax,
+                *circle_params,
+                color=COLOURS["annotation"],
+                alpha=0.35,
+                zorder=1,
+            )
 
     _scatter_with_labels(ax_gt, points)
 

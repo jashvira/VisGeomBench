@@ -6,6 +6,8 @@ Task format:
   of integer indices. Output must start from the smallest index among hull vertices.
 
 Implementation notes:
+- Supports a default boundary-biased distribution and a 'circle' mode where every
+  point lies on a randomly sampled circle.
 - Uses SciPy's ConvexHull; datagen never emits degenerate point sets (>=3 non-collinear).
 - Deterministic content-hash IDs include prompt and exact ground truth.
 """
@@ -25,6 +27,10 @@ from visual_geometry_bench.datagen.utils import (
 
 
 EPSILON = 1e-12
+DEFAULT_POINT_DISTRIBUTION = "default"
+SUPPORTED_POINT_DISTRIBUTIONS = {DEFAULT_POINT_DISTRIBUTION, "circle"}
+CIRCLE_CENTER_MARGIN = 0.2  # keep circle well inside [0,1) for numeric stability
+CIRCLE_MIN_RADIUS = 0.1
 
 
 def _gen_convex_points(num_points: int, random_seed: int) -> List[Tuple[float, float]]:
@@ -74,22 +80,62 @@ def _gen_convex_points(num_points: int, random_seed: int) -> List[Tuple[float, f
     return validate_point_array(points.tolist(), min_points=3)
 
 
+def _gen_circle_points(num_points: int, random_seed: int) -> List[Tuple[float, float]]:
+    """Generate points lying exactly on a randomly sampled circle within [0,1)²."""
+    assert num_points >= 3
+    rng = np.random.default_rng(random_seed)
+
+    # Sample a center that leaves enough room for a meaningful radius.
+    cx = float(rng.uniform(CIRCLE_CENTER_MARGIN, 1.0 - CIRCLE_CENTER_MARGIN))
+    cy = float(rng.uniform(CIRCLE_CENTER_MARGIN, 1.0 - CIRCLE_CENTER_MARGIN))
+
+    # Radius must keep the circle inside the unit square.
+    max_radius = min(cx, cy, 1.0 - cx, 1.0 - cy)
+    radius = float(rng.uniform(CIRCLE_MIN_RADIUS, max_radius))
+
+    angles = np.linspace(0.0, 2.0 * np.pi, num_points, endpoint=False)
+    angle_offset = float(rng.uniform(0.0, 2.0 * np.pi))
+    angles = angles + angle_offset
+
+    x_vals = cx + radius * np.cos(angles)
+    y_vals = cy + radius * np.sin(angles)
+    points = np.column_stack((x_vals, y_vals))
+
+    # Randomise presentation order to avoid giving the hull sequence away.
+    perm = rng.permutation(num_points)
+    points = points[perm]
+
+    return validate_point_array(points.tolist(), min_points=3)
+
+
 def _to_points(datagen_args: dict) -> List[Tuple[float, float]]:
-    """Generate points from datagen arguments via random convex sampling.
+    """Generate points from datagen arguments via the requested distribution.
 
     Args:
-        datagen_args: Dictionary containing 'num_points' and 'seed' for deterministic convex sampling
+        datagen_args: Dictionary containing 'num_points', 'seed', and optional
+            'point_distribution' ('default' or 'circle')
 
     Returns:
-        List of (x, y) float tuples sampled uniformly from unit square
+        List of (x, y) float tuples sampled from the configured distribution
 
     Raises:
-        ValueError: If num_points < 3
+        ValueError: If num_points < 3 or point_distribution is unsupported
     """
     num_points = int(datagen_args["num_points"])  # type: ignore[arg-type]
     random_seed = int(datagen_args["seed"])  # type: ignore[arg-type]
+    distribution = str(datagen_args.get("point_distribution", DEFAULT_POINT_DISTRIBUTION))
+
+    if distribution not in SUPPORTED_POINT_DISTRIBUTIONS:
+        raise ValueError(
+            f"unsupported point_distribution '{distribution}'; expected one of {sorted(SUPPORTED_POINT_DISTRIBUTIONS)}"
+        )
+
     if num_points < 3:
         raise ValueError("convex sampling requires num_points >= 3")
+
+    if distribution == "circle":
+        return _gen_circle_points(num_points, random_seed)
+
     return _gen_convex_points(num_points, random_seed)
 
 
@@ -198,6 +244,11 @@ def generate_dataset_record(
 
     prompt = make_prompt(datagen_args)
     ground_truth = get_solutions(datagen_args)
+    distribution = str(datagen_args.get("point_distribution", DEFAULT_POINT_DISTRIBUTION))
+    if distribution not in SUPPORTED_POINT_DISTRIBUTIONS:
+        raise ValueError(
+            f"unsupported point_distribution '{distribution}'; expected one of {sorted(SUPPORTED_POINT_DISTRIBUTIONS)}"
+        )
 
     record_id_final = record_id or compute_content_hash(
         problem_type="convex_hull_ordering",
@@ -208,10 +259,15 @@ def generate_dataset_record(
         prefix_len=8,
     )
 
+    metadata_tags = set(tags or [])
+    if distribution == "circle":
+        metadata_tags.add("circle")
+
     metadata = {
         "problem_type": "convex_hull_ordering",
-        "tags": list(set(tags or [])),
+        "tags": sorted(metadata_tags),
         "difficulty": difficulty or "",
+        "point_distribution": distribution,
     }
 
     return {

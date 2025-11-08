@@ -7,6 +7,7 @@ from importlib import reload
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pytest
 
 from scripts.render_eval_visuals import render_results
@@ -78,7 +79,7 @@ def test_visualise_record_dispatch_and_save(tmp_path: Path) -> None:
 
 def test_convex_hull_renderer_generates_figure(renderers_ready):
     datagen_args = {"num_points": 6, "seed": 11}
-    points = convex_to_points(datagen_args)
+    points = np.array(convex_to_points(datagen_args), dtype=float)
     hull = _compute_convex_hull(points)
     assert hull is not None
     hull_indices = _hull_to_canonical_indices(hull)
@@ -93,6 +94,35 @@ def test_convex_hull_renderer_generates_figure(renderers_ready):
     fig = visualise_record(record, hull_indices)
     assert isinstance(fig, plt.Figure)
     assert len(fig.axes) == 2
+    plt.close(fig)
+
+
+def test_convex_hull_circle_renderer_adjusts_axes(renderers_ready):
+    datagen_args = {"num_points": 24, "seed": 777, "point_distribution": "circle"}
+    points = np.array(convex_to_points(datagen_args), dtype=float)
+    hull = _compute_convex_hull(points)
+    assert hull is not None
+    hull_indices = _hull_to_canonical_indices(hull)
+
+    record = {
+        "id": "convex-circle",
+        "metadata": {"problem_type": "convex_hull_ordering", "point_distribution": "circle"},
+        "datagen_args": datagen_args,
+        "ground_truth": hull_indices,
+    }
+
+    fig = visualise_record(record, hull_indices)
+    assert isinstance(fig, plt.Figure)
+    ax_gt = fig.axes[0]
+    x_range = ax_gt.get_xlim()[1] - ax_gt.get_xlim()[0]
+    y_range = ax_gt.get_ylim()[1] - ax_gt.get_ylim()[0]
+    assert x_range < 1.0
+    assert y_range < 1.0
+    center = points.mean(axis=0)
+    x_mid = sum(ax_gt.get_xlim()) / 2
+    y_mid = sum(ax_gt.get_ylim()) / 2
+    assert abs(x_mid - center[0]) < 0.1
+    assert abs(y_mid - center[1]) < 0.1
     plt.close(fig)
 
 

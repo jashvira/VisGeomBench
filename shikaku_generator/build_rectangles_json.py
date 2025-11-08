@@ -219,14 +219,17 @@ def distribute_counts(min_size: int, max_size: int, total: int) -> Dict[int, int
     return counts
 
 
-def generate_ids(counts: Dict[int, int], rect_exec: str) -> List[str]:
+def generate_ids(counts: Dict[int, int], rect_exec: str, expand: float) -> List[str]:
     """Request puzzle IDs from the RECT solver for each size bucket."""
 
     puzzle_ids: List[str] = []
     for size, quantity in tqdm(counts.items(), desc="Generating IDs", unit="size"):
         if quantity <= 0:
             continue
-        output = run([rect_exec, "--generate", str(quantity), f"{size}x{size}"])
+        param = f"{size}x{size}"
+        if expand > 0:
+            param = f"{param}e{expand:g}"
+        output = run([rect_exec, "--generate", str(quantity), param])
         puzzle_ids.extend(line.strip() for line in output.splitlines() if line.strip())
     return puzzle_ids
 
@@ -240,6 +243,15 @@ def main() -> None:
     parser.add_argument("--max-size", type=int, default=20, help="maximum grid size (square)")
     parser.add_argument("--prefix", default="rect", help="basename for generated .sav files")
     parser.add_argument("--out-name", default="rectangles", help="output file stem inside generated/")
+    parser.add_argument(
+        "--expand",
+        type=float,
+        default=0.0,
+        help=(
+            "Expansion factor passed as 'e' suffix to the rect generator. "
+            "Higher values (e.g. 0.4-0.8) stretch the base grid and typically yield harder puzzles."
+        ),
+    )
     args = parser.parse_args()
 
     if args.min_size < 2 or args.max_size < args.min_size:
@@ -251,7 +263,7 @@ def main() -> None:
     rect_version = run([rect_exec, "--version"]).strip()
 
     counts = distribute_counts(args.min_size, args.max_size, args.count)
-    ids = generate_ids(counts, rect_exec)
+    ids = generate_ids(counts, rect_exec, args.expand)
 
     if len(ids) != args.count:
         raise SystemExit(f"expected {args.count} ids, got {len(ids)}")
