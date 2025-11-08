@@ -1,0 +1,14 @@
+[dataset]
+output = "data/two_segments_curated.jsonl"
+schema_version = "1.0"
+
+[[task]]
+type = "two_segments"
+metadata = { difficulty = "mixed" }
+
+datagen_args_grid = [
+  { counts = { triangle = 2, quadrilateral = 2 }, coordinate_grid = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0], snap_decimals = 3, metadata = { difficulty = "easy" } },
+  { counts = { triangle = 1, quadrilateral = 1, pentagon = 1 }, square = "random", square_seed = 37, snap_decimals = 4, metadata = { difficulty = "medium" } },
+  { counts = { quadrilateral = 2, pentagon = 1, hexagon = 1 }, corners = [[0.0, 0.0], [1.25, 0.05], [1.1, 1.15], [-0.1, 1.0]], snap_decimals = 3, metadata = { difficulty = "hard" } },
+  { counts = { triangle = 3, pentagon = 1 }, coordinate_grid = [0.0, 0.15, 0.33, 0.5, 0.67, 0.85, 1.0], square = "unit", snap_decimals = 4, metadata = { difficulty = "medium" } },
+]

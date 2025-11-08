@@ -54,8 +54,14 @@ def _format_counts(counts: Iterable[Mapping[str, Any]]) -> list[str]:
     for entry in counts:
         shape = entry.get("shape")
         count = entry.get("count")
+        if shape is None or count is None:
+            continue
         parts.append(f"{count} × {shape}")
-    return parts if parts else ["(no counts)"]
+    return parts if parts else ["(counts unavailable)"]
+
+
+def _format_prompt_block(counts_lines: list[str]) -> str:
+    return "Requested regions:\n" + "\n".join(counts_lines)
 
 
 def _coerce_segments(answer: Any) -> list[tuple[tuple[float, float], tuple[float, float]]] | None:
@@ -106,22 +112,23 @@ def _render_two_segments(
 
     counts = record.get("ground_truth", [])
     counts_lines = _format_counts(counts)
+    prompt_text = _format_prompt_block(counts_lines)
 
-    for ax, title in zip(axes, ("Ground truth", "Answer"), strict=True):
+    for ax, title in zip(axes, ("", "Answer"), strict=True):
         plt.sca(ax)
         _panel_setup(title, (xmin, xmax, ymin, ymax))
         ax.set_facecolor("#FAFAFA")
-        _draw_square(ax, corners)
+        if title == "Answer":
+            _draw_square(ax, corners)
 
-    # Ground truth: show counts only (no segments) with badge
-    gt_text = "\n".join(counts_lines)
+    # Prompt panel: textual summary of requirements
     axes[0].text(
         0.5,
         0.5,
-        gt_text,
+        prompt_text,
         ha="center",
         va="center",
-        fontsize=12,
+        fontsize=11,
         color=COLOURS["truth"],
         weight="bold",
         bbox=dict(boxstyle="round,pad=0.8", facecolor="white", edgecolor=COLOURS["truth"], linewidth=2),

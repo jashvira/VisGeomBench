@@ -8,6 +8,7 @@ from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import colors as mcolors
 
 from visual_geometry_bench.datagen.shikaku_tasks import load_puzzle
 
@@ -15,11 +16,49 @@ from .render import register_renderer
 from .styles import COLOURS
 
 
+def _lighten(hex_colour: str, factor: float) -> tuple[float, float, float]:
+    """Blend the provided colour with white by the given factor (0=no change)."""
+
+    rgb = np.array(mcolors.to_rgb(hex_colour))
+    return tuple((1.0 - factor) * rgb + factor * np.ones_like(rgb))
+
+
+def _palette_from_color(base_color: str, count: int) -> tuple[list[tuple[float, float, float]], str]:
+    """Return a colour-blind friendly palette with distinct hues per rectangle."""
+
+    okabe_ito = [
+        "#E69F00",  # orange
+        "#56B4E9",  # sky blue
+        "#009E73",  # bluish green
+        "#F0E442",  # yellow
+        "#0072B2",  # blue
+        "#D55E00",  # vermillion
+        "#CC79A7",  # reddish purple
+        "#999999",  # grey
+    ]
+
+    colour_key = base_color.lower()
+    start_idx = 0
+    if colour_key == COLOURS["answer"]:
+        start_idx = 4  # start mid palette to avoid matching truth
+    elif colour_key not in {COLOURS["truth"], COLOURS["answer"]}:
+        start_idx = 2
+
+    fills: list[tuple[float, float, float]] = []
+    for idx in range(max(count, 1)):
+        base = okabe_ito[(start_idx + idx) % len(okabe_ito)]
+        cycle = idx // len(okabe_ito)
+        factor = min(0.18 * cycle, 0.65)
+        fills.append(_lighten(base, factor))
+
+    return fills, "#3C3C3C"
+
+
 def _draw_grid(ax: plt.Axes, width: int, height: int, numbers: np.ndarray) -> None:
     for i in range(height + 1):
-        ax.axhline(i, color="#888888", linewidth=1.1, zorder=1)
+        ax.axhline(i, color="#666666", linewidth=0.8, zorder=10)
     for j in range(width + 1):
-        ax.axvline(j, color="#888888", linewidth=1.1, zorder=1)
+        ax.axvline(j, color="#666666", linewidth=0.8, zorder=10)
 
     for i in range(height):
         for j in range(width):
@@ -39,22 +78,28 @@ def _draw_grid(ax: plt.Axes, width: int, height: int, numbers: np.ndarray) -> No
 
 
 def _draw_rectangles(ax: plt.Axes, rectangles: list[list[int]], *, color: str, zorder: int) -> None:
-    for rect in rectangles:
+    """Fill each rectangle with a distinct colour while retaining crisp bounds."""
+
+    if not rectangles:
+        return
+
+    fills, stroke = _palette_from_color(color, len(rectangles))
+
+    for idx, rect in enumerate(rectangles):
         left, top, right, bottom = rect
-        # Matplotlib origin is bottom-left; puzzle uses top-left indexing, so shift accordingly
-        x0 = left
-        y0 = top
-        width = (right - left + 1)
-        height = (bottom - top + 1)
+        width = right - left + 1
+        height = bottom - top + 1
+
+        face = fills[idx % len(fills)]
+
         patch = plt.Rectangle(
-            (x0, y0),
+            (left, top),
             width,
             height,
-            fill=False,
-            edgecolor=color,
-            linewidth=2.6,
-            zorder=zorder,
-            joinstyle="miter",
+            facecolor=face,
+            edgecolor=stroke,
+            linewidth=1.6,
+            zorder=max(1, zorder - 2),
         )
         ax.add_patch(patch)
 
@@ -114,13 +159,12 @@ def _render_shikaku(
         ax.grid(False)
         ax.set_facecolor("#FAFAFA")
 
-    # Ground truth: grid + solution rectangles
-    _draw_grid(axes[0], width, height, numbers)
+    # Ground truth: rectangles first, then overlay grid for crisp separators
     if ground_truth:
         _draw_rectangles(axes[0], ground_truth, color=COLOURS["truth"], zorder=5)
+    _draw_grid(axes[0], width, height, numbers)
 
     # Answer: grid + model rectangles
-    _draw_grid(axes[1], width, height, numbers)
     parsed_answer = _coerce_rectangles(answer)
     if parsed_answer is None:
         axes[1].text(
@@ -134,6 +178,7 @@ def _render_shikaku(
         )
     else:
         _draw_rectangles(axes[1], parsed_answer, color=COLOURS["answer"], zorder=5)
+    _draw_grid(axes[1], width, height, numbers)
 
     return fig
 
