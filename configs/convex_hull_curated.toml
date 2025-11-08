@@ -1,0 +1,15 @@
+[dataset]
+output = "data/convex_hull_curated.jsonl"
+schema_version = "1.0"
+
+[[task]]
+type = "convex_hull_ordering"
+metadata = { tags = ["geometry", "convex-hull", "curated"], difficulty = "mixed" }
+
+datagen_args_grid = [
+{ num_points = 6, seed = 13, metadata = { difficulty = "easy"} },
+{ num_points = 8, seed = 37, metadata = { difficulty = "easy"} },
+{ num_points = 10, seed = 21, metadata = { difficulty = "easy"} },
+{ num_points = 12, seed = 211, metadata = { difficulty = "medium"} },
+{ num_points = 20, seed = 503, metadata = { difficulty = "hard"} },
+]

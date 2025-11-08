@@ -87,14 +87,21 @@ def _draw_segments(ax: plt.Axes, segments: list[tuple[tuple[float, float], tuple
         ax.plot((x0, x1), (y0, y1), color=color, linewidth=3, zorder=2, alpha=0.9)
 
 
-def _render_two_segments(record: Mapping[str, Any], answer: Any, detail: bool) -> plt.Figure:
+def _render_two_segments(
+    record: Mapping[str, Any],
+    answer: Any,
+    detail: bool,
+    *,
+    show: bool | None = None,
+) -> plt.Figure:
+    _ = show
     datagen_args = record.get("datagen_args", {})
     corners = _extract_corners(datagen_args)
     xmin, xmax = float(corners[:, 0].min()) - 0.1, float(corners[:, 0].max()) + 0.1
     ymin, ymax = float(corners[:, 1].min()) - 0.1, float(corners[:, 1].max()) + 0.1
 
     fig, axes = plt.subplots(1, 2, figsize=(10, 5), constrained_layout=True)
-    fig.suptitle("two_segments", fontsize=15, weight="bold")
+    fig.suptitle("Two Segments", fontsize=15, weight="bold")
     fig.patch.set_facecolor("white")
 
     counts = record.get("ground_truth", [])

@@ -80,7 +80,14 @@ def _coerce_rectangles(answer: Any) -> list[list[int]] | None:
     return rects if rects else None
 
 
-def _render_shikaku(record: Mapping[str, Any], answer: Any, detail: bool) -> plt.Figure:
+def _render_shikaku(
+    record: Mapping[str, Any],
+    answer: Any,
+    detail: bool,
+    *,
+    show: bool | None = None,
+) -> plt.Figure:
+    _ = show
     datagen_args = record.get("datagen_args", {})
     # Support inline grid data for tests; otherwise load from file
     if "width" in datagen_args and "height" in datagen_args and "numbers" in datagen_args:
@@ -95,7 +102,7 @@ def _render_shikaku(record: Mapping[str, Any], answer: Any, detail: bool) -> plt
     ground_truth = record.get("ground_truth", [])
 
     fig, axes = plt.subplots(1, 2, figsize=(12, 6), constrained_layout=True)
-    fig.suptitle("shikaku_rectangles", fontsize=15, weight="bold")
+    fig.suptitle("Shikaku Rectangles", fontsize=15, weight="bold")
     fig.patch.set_facecolor("white")
 
     for ax, title in zip(axes, ("Ground truth", "Answer"), strict=True):

@@ -1,0 +1,14 @@
+[dataset]
+output = "data/topology_edge_classify_curated.jsonl"
+schema_version = "1.0"
+
+[[task]]
+type = "topology_edge_tasks"
+metadata = { tags = ["topology", "edges", "classify"], difficulty = "mixed" }
+
+datagen_args_grid = [
+  { subtask = "classify_behaviour", corner_order = ["bottom-left", "bottom-right", "top-right", "top-left"], cases = [0, 4, 6, 10], metadata = { difficulty = "medium", tags = ["canonical-order", "mixed-behaviour"] } },
+  { subtask = "classify_behaviour", corner_order = ["top-right", "bottom-right", "bottom-left", "top-left"], cases = [11, 1, 2, 14], metadata = { difficulty = "hard", tags = ["rotated-order", "triple-junction"] } },
+  { subtask = "classify_behaviour", corner_order = ["bottom-right", "top-right", "top-left", "bottom-left"], cases = [3, 5, 7, 9, 13], metadata = { difficulty = "medium", tags = ["edge-walk", "three-domains"] } },
+]
+

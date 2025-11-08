@@ -39,6 +39,12 @@ from visual_geometry_bench.datagen.utils import (
 
 # Canonical edge order used by canonical dictionaries (indices 0..3)
 _CANONICAL_EDGE_ORDER = ("bottom", "right", "top", "left")
+_EDGE_NEIGHBOURS = {
+    "bottom": (0, 1),
+    "right": (1, 2),
+    "top": (2, 3),
+    "left": (3, 0),
+}
 
 
 def _edge_index_map(edge_order: tuple[str, str, str, str]) -> dict[str, int]:
@@ -117,6 +123,25 @@ CLASS_DICT: dict[tuple[int, int, int, int], str] = {
     (1, 2, 3, 3): "three domains meeting",
     (1, 2, 3, 4): "ambiguous",
 }
+
+
+# Edge sets for triple-junction cases (canonical corner order, first-occurrence relabelled).
+def _build_triple_edge_dict() -> dict[tuple[int, int, int, int], list[str]]:
+    triples: dict[tuple[int, int, int, int], list[str]] = {}
+    for cfg, behaviour in CLASS_DICT.items():
+        if behaviour != "three domains meeting":
+            continue
+        edge_names = [
+            name
+            for name, (i, j) in _EDGE_NEIGHBOURS.items()
+            if cfg[i] != cfg[j]
+        ]
+        if len(edge_names) == 3:
+            triples[cfg] = edge_names
+    return triples
+
+
+TRIPLE_EDGE_DICT = _build_triple_edge_dict()
 
 
 # Edge connection pairs for 2-class known behaviour configurations.
@@ -404,5 +429,4 @@ def generate_dataset_record(
         "metadata": metadata,
         "datagen_args": datagen_args,
     }
-
 

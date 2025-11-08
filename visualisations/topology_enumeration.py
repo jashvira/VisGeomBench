@@ -200,7 +200,7 @@ def _render_topology_enumeration(
     show: bool | None = None,
 ) -> plt.Figure:
     fig = plt.figure(figsize=(12, 6))
-    fig.suptitle("topology_enumeration", fontsize=15, weight="bold")
+    fig.suptitle("Topology Enumeration", fontsize=15, weight="bold")
     fig.patch.set_facecolor("white")
 
     _ = show

@@ -16,9 +16,26 @@ from .render import register_renderer
 from .styles import COLOURS
 
 
+_FRIENDLY_TITLES = {
+    "convex_hull_ordering": "Convex Hull Ordering",
+    "delaunay_triangulation": "Delaunay Triangulation",
+}
+
+
+def _format_problem_title(record: Mapping[str, Any]) -> str:
+    metadata = record.get("metadata", {}) if isinstance(record, Mapping) else {}
+    raw = metadata.get("problem_type", "") if isinstance(metadata, Mapping) else ""
+    if raw in _FRIENDLY_TITLES:
+        return _FRIENDLY_TITLES[raw]
+    if not raw:
+        return "Geometry Task"
+    return raw.replace("_", " ").title()
+
+
 def _make_two_panel(record: Mapping[str, Any]) -> tuple[plt.Figure, list[plt.Axes]]:
-    fig, axes = plt.subplots(1, 2, figsize=(10, 5), constrained_layout=True)
-    fig.suptitle(record.get("metadata", {}).get("problem_type", ""), fontsize=15, weight="bold")
+    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+    fig.subplots_adjust(bottom=0.18, wspace=0.25)
+    fig.suptitle(_format_problem_title(record), fontsize=15, weight="bold")
     for ax, title in zip(axes, ("Ground truth", "Answer"), strict=True):
         ax.set_title(title, fontsize=13, weight="semibold", pad=10)
         ax.set_aspect("equal")
@@ -32,8 +49,17 @@ def _make_two_panel(record: Mapping[str, Any]) -> tuple[plt.Figure, list[plt.Axe
 def _scatter_with_labels(ax: plt.Axes, points: np.ndarray) -> None:
     ax.scatter(points[:, 0], points[:, 1], s=80, color=COLOURS["points"], edgecolors="white", linewidths=1.5, zorder=3)
     for idx, (x, y) in enumerate(points):
-        ax.text(x + 0.02, y + 0.02, str(idx), color="black", fontsize=11, ha="left", va="bottom", 
-                weight="bold", bbox=dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor="none", alpha=0.8))
+        ax.text(
+            x + 0.02,
+            y + 0.02,
+            str(idx),
+            color="black",
+            fontsize=11,
+            ha="left",
+            va="bottom",
+            weight="bold",
+            bbox=None,
+        )
 
 
 def _draw_polyline(ax: plt.Axes, points: np.ndarray, indices: Sequence[int], *, color: str, closed: bool) -> None:

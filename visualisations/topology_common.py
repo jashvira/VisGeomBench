@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from typing import Any, Sequence
+from typing import Any, Mapping, Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -148,6 +148,7 @@ def _draw_edge_connections(
     label: str,
     edge_centers: Sequence[tuple[float, float]],
     offset: float = 0.0,
+    line_kwargs: Mapping[str, Any] | None = None,
 ) -> None:
     if not connections:
         return
@@ -174,14 +175,20 @@ def _draw_edge_connections(
         t = np.linspace(0, 1, 60)
         curve = ((1 - t)[:, None] ** 2) * p1 + 2 * (1 - t)[:, None] * t[:, None] * control + (t[:, None] ** 2) * p2
 
+        plot_kwargs = {
+            "color": color,
+            "linewidth": 2.6,
+            "alpha": 0.85,
+            "label": label if idx == 0 else "",
+            "zorder": 2,
+        }
+        if line_kwargs:
+            plot_kwargs.update(dict(line_kwargs))
+
         ax.plot(
             curve[:, 0],
             curve[:, 1],
-            color=color,
-            linewidth=2.6,
-            alpha=0.85,
-            label=label if idx == 0 else "",
-            zorder=2,
+            **plot_kwargs,
         )
 
 

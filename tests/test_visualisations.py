@@ -32,13 +32,15 @@ def clear_renderers(monkeypatch):
 @pytest.fixture
 def renderers_ready():
     import visualisations.geometry as geom
-    import visualisations.topology as topo
+    import visualisations.topology_edge as topo_edge
+    import visualisations.topology_enumeration as topo_enum
     import visualisations.two_segments as two_seg
     import visualisations.shikaku as shikaku
     import visualisations.half_subdivision as half_sub
 
     reload(geom)
-    reload(topo)
+    reload(topo_edge)
+    reload(topo_enum)
     reload(two_seg)
     reload(shikaku)
     reload(half_sub)
@@ -46,7 +48,7 @@ def renderers_ready():
     plt.close("all")
 
 
-def dummy_renderer(record, answer, detail):
+def dummy_renderer(record, answer, detail, *, show=None):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.set_title(record["id"])
@@ -226,6 +228,7 @@ def test_half_subdivision_renderer_generates_figure(renderers_ready):
             "split_prob": 0.7,
             "start_axis": "x",
             "tree_seed": 42,
+            "seed": 123,
             "target_leaf": "A",
         },
         "ground_truth": ["B", "C"],

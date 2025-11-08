@@ -391,7 +391,7 @@ def _render_half_subdivision(
     ground_truth_labels = explicit_ground_truth if explicit_ground_truth else default_ground
 
     fig = plt.figure(figsize=(14, 7))
-    fig.suptitle("half_subdivision_neighbours", fontsize=15, weight="bold", y=0.985)
+    fig.suptitle("Half Subdivision Neighbours", fontsize=15, weight="bold", y=0.985)
     fig.patch.set_facecolor("white")
     fig.subplots_adjust(top=0.84)
     target_display = target_label if target_label else '""'

@@ -1,0 +1,14 @@
+[dataset]
+output = "data/topology_edge_enumerate_curated.jsonl"
+schema_version = "1.0"
+
+[[task]]
+type = "topology_edge_tasks"
+metadata = { tags = ["topology", "edges", "enumerate"], difficulty = "mixed" }
+
+datagen_args_grid = [
+  { subtask = "enumerate_edges", corner_order = ["bottom-left", "bottom-right", "top-right", "top-left"], edge_order = ["bottom", "right", "top", "left"], cases = [0, 1, 2, 3], metadata = { difficulty = "easy", tags = ["canonical-order", "two-class"] } },
+  { subtask = "enumerate_edges", corner_order = ["bottom-right", "top-right", "top-left", "bottom-left"], edge_order = ["right", "top", "left", "bottom"], cases = [5, 6, 7, 8, 9], metadata = { difficulty = "medium", tags = ["rotated-order", "ambiguous-included"] } },
+  { subtask = "enumerate_edges", corner_order = ["top-left", "bottom-left", "bottom-right", "top-right"], edge_order = ["top", "left", "bottom", "right"], cases = [12, 14, 1, 2], metadata = { difficulty = "hard", tags = ["edge-permutation", "mixed-behaviour"] } },
+]
+

@@ -60,6 +60,3 @@ outputs/
 shikaku_generator/rect
 shikaku_generator/sgt-puzzles_*.deb
 
-# scratch Delaunay assets
-tmp_delaunay/
-tmp_shikaku/
