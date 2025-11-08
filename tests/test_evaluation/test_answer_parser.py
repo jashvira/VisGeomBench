@@ -152,13 +152,20 @@ class TestPythonLiteralParser:
         parsed = ast.literal_eval(result)
         assert list(map(str, parsed)) == ["1100110", "11100", "1110101", "1110111"]
 
-    def test_simple_sequence_preferred_over_backscan(self, parser):
-        """Trailing comma list wins even if earlier text has brackets."""
+    def test_bracket_answer_not_overridden_by_trailing_metadata(self, parser):
+        """Bracketed answer still returned when metadata looks like CSV."""
         text = """
-        Reasoning with bbox x:[0.1,0.2], y:[0.3,0.4]
+        Answer: [1, 2]
+        Confidence: 0.8
+        """
+        result = parser.parse_answer(text)
+        assert result == "[1, 2]"
 
-        Final neighbours:
-        010, 011, 100
+    def test_simple_sequence_used_when_no_brackets_exist(self, parser):
+        """Comma-separated answers still parsed when brackets absent."""
+        text = """
+        assistant: 010, 011, 100
+        Confidence: high
         """
         result = parser.parse_answer(text)
         assert result is not None

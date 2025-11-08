@@ -56,8 +56,8 @@ class PythonLiteralParser(vf.Parser):
         if self._is_valid_literal(stripped):
             return stripped
 
-        # Strategy 3: Trailing comma-delimited sequences (no brackets)
-        simple_list = self._parse_simple_sequence(stripped)
+        # Strategy 3: Trailing comma-delimited sequences (prefer multi-token answers)
+        simple_list = self._parse_simple_sequence(stripped, min_tokens=2)
         if simple_list is not None:
             return simple_list
 
@@ -65,6 +65,11 @@ class PythonLiteralParser(vf.Parser):
         backscanned = self._backscan_literal(text)
         if backscanned and self._is_valid_literal(backscanned):
             return backscanned.strip()
+
+        # Strategy 5: Final fallback to simple sequence (even single token)
+        simple_list = self._parse_simple_sequence(stripped, min_tokens=1)
+        if simple_list is not None:
+            return simple_list
 
         return None
 
@@ -131,14 +136,19 @@ class PythonLiteralParser(vf.Parser):
         except (ValueError, SyntaxError):
             return False
 
-    def _parse_simple_sequence(self, text: str) -> Optional[str]:
+    def _parse_simple_sequence(self, text: str, *, min_tokens: int) -> Optional[str]:
         """Convert comma/newline separated scalars into a Python list literal."""
 
         if not text:
             return None
 
-        for candidate in self._simple_sequence_candidates(text):
-            literal = self._coerce_simple_sequence(candidate)
+        candidates = self._simple_sequence_candidates(text)
+        ordered = sorted(
+            enumerate(candidates),
+            key=lambda item: (-len(item[1]), item[0]),
+        )
+        for _, candidate in ordered:
+            literal = self._coerce_simple_sequence(candidate, min_tokens=min_tokens)
             if literal is not None:
                 return literal
         return None
@@ -162,14 +172,21 @@ class PythonLiteralParser(vf.Parser):
         if lines:
             _add(lines[-1])
 
-        # Trailing segments after separators (colon/arrow) capture role prefixes, e.g. "assistant: ...".
+        # Include per-line suffixes after common separators (role labels, arrows, etc.).
+        for line in reversed(lines):
+            for separator in ("->", "=>", ":", "="):
+                if separator in line:
+                    _add(line.rsplit(separator, 1)[-1])
+                    break
+
+        # Global suffix after separators across the whole text (fallback).
         for separator in ("->", "=>", ":", "="):
             if separator in text:
                 _add(text.rsplit(separator, 1)[-1])
 
         return candidates
 
-    def _coerce_simple_sequence(self, text: str) -> Optional[str]:
+    def _coerce_simple_sequence(self, text: str, *, min_tokens: int) -> Optional[str]:
         """Attempt to turn a plain scalar sequence into a list literal."""
 
         if any(bracket in text for bracket in "[]{}()"):
@@ -177,7 +194,7 @@ class PythonLiteralParser(vf.Parser):
 
         candidate = text.replace("\n", ",")
         tokens = [tok.strip() for tok in candidate.split(",") if tok.strip()]
-        if not tokens:
+        if len(tokens) < min_tokens:
             return None
 
         allowed = re.compile(r"^[A-Za-z0-9_.\-\"']+$")
