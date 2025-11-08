@@ -369,7 +369,13 @@ def _coerce_string_list(answer: Any) -> list[str] | None:
     return result if result else None
 
 
-def _render_half_subdivision(record: Mapping[str, Any], answer: Any, detail: bool) -> plt.Figure:
+def _render_half_subdivision(
+    record: Mapping[str, Any],
+    answer: Any,
+    detail: bool,
+    *,
+    show: bool | None = None,
+) -> plt.Figure:
     datagen_args = record.get("datagen_args", {})
     leaves, dim, axis_cycle, default_target, default_ground = _generate_case(datagen_args)
 
@@ -447,7 +453,7 @@ def _render_half_subdivision(record: Mapping[str, Any], answer: Any, detail: boo
             has_ground_truth=bool(highlight_labels),
             has_model_answer=bool(model_answer_labels),
             location="upper left",
-            bbox_anchor=(0.02, 1.12),
+            bbox_anchor=(1.02, 1.0),
         )
     else:
         ax_spatial = fig.add_subplot(gs[:, 1])
@@ -480,7 +486,12 @@ def _render_half_subdivision(record: Mapping[str, Any], answer: Any, detail: boo
 
     _enable_leaf_click(fig, interactive_artists)
 
-    plt.show()
+    backend = plt.get_backend().lower()
+    non_interactive_markers = {"agg", "cairoagg", "pdf", "pgf", "svg", "template"}
+    default_show = not any(marker in backend for marker in non_interactive_markers) and "inline" not in backend
+    should_show = show if show is not None else default_show
+    if should_show:
+        plt.show()
 
     return fig
 

@@ -34,6 +34,7 @@ def visualise_record(
     reward: Any | None = None,
     output_stub: str | None = None,
     metadata_caption: str | None = None,
+    show: bool | None = None,
 ) -> RendererResult:
     """Render a dataset record (and optional model answer) into figure(s)."""
 
@@ -47,7 +48,7 @@ def visualise_record(
 
     _ensure_matplotlib_style()
 
-    result = renderer(record, answer, detail)
+    result = renderer(record, answer, detail, show=show)
 
     def _decorate(fig: plt.Figure) -> None:
         axes = list(fig.axes)
