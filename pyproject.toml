@@ -7,7 +7,7 @@ dependencies = [
     "numpy>=2.1.0,<2.4.0",
     "scipy>=1.11.0,<1.17.0",
     "shapely>=2.1.2",
-    "verifiers>=0.1.0",
+    "verifiers>=0.1.7.post0",
     "treelib>=1.8.0",
 ]
 
