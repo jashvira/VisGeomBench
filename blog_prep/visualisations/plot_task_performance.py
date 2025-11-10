@@ -21,7 +21,7 @@ BASE_DIR = PLOT_DIR.parent
 OUTPUT_PATH = PLOT_DIR / "task_performance.png"
 SUBPLOT_PATH = PLOT_DIR / "task_performance_subplots.png"
 OVERALL_PATH = PLOT_DIR / "task_performance_overall.png"
-ASSET_DIR = PLOT_DIR / "assets"
+ASSET_DIR = BASE_DIR / "assets"
 
 MODEL_BRANDING = {
     "gpt-5-2025-08-07": {
@@ -206,7 +206,7 @@ def plot_grouped(task_metrics):
     ax.margins(x=0.02)
     ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(0, 1.15))
     fig.tight_layout(rect=[0, 0.02, 1, 0.9])
-    _add_header(fig, models)
+    _add_header(fig, models, show_logos=False)
     fig.savefig(OUTPUT_PATH, dpi=200)
     print(f"Wrote {OUTPUT_PATH}")
 
@@ -263,7 +263,7 @@ def plot_subplots(task_metrics):
     fig.supylabel("Success rate")
     fig.tight_layout(rect=[0, 0.03, 1, 0.9])
     fig.subplots_adjust(hspace=0.5, wspace=0.35)
-    _add_header(fig, models)
+    _add_header(fig, models, show_logos=False)
     fig.savefig(SUBPLOT_PATH, dpi=200)
     print(f"Wrote {SUBPLOT_PATH}")
 
