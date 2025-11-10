@@ -9,7 +9,7 @@ from typing import Any
 import matplotlib.pyplot as plt
 import numpy as np
 
-from .render import register_renderer
+from .render import get_answer_label, register_renderer
 from .styles import COLOURS
 
 _UNIT_SQUARE = np.array(
@@ -114,11 +114,12 @@ def _render_two_segments(
     counts_lines = _format_counts(counts)
     prompt_text = _format_prompt_block(counts_lines)
 
-    for ax, title in zip(axes, ("", "Answer"), strict=True):
+    answer_title = get_answer_label(record)
+    for ax, title in zip(axes, ("", answer_title), strict=True):
         plt.sca(ax)
         _panel_setup(title, (xmin, xmax, ymin, ymax))
         ax.set_facecolor("#FAFAFA")
-        if title == "Answer":
+        if title == answer_title:
             _draw_square(ax, corners)
 
     # Prompt panel: textual summary of requirements

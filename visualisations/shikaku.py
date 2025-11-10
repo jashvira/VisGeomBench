@@ -12,7 +12,7 @@ from matplotlib import colors as mcolors
 
 from visual_geometry_bench.datagen.shikaku_tasks import load_puzzle
 
-from .render import register_renderer
+from .render import get_answer_label, register_renderer
 from .styles import COLOURS
 
 
@@ -150,7 +150,8 @@ def _render_shikaku(
     fig.suptitle("Shikaku Rectangles", fontsize=15, weight="bold")
     fig.patch.set_facecolor("white")
 
-    for ax, title in zip(axes, ("Ground truth", "Answer"), strict=True):
+    answer_title = get_answer_label(record)
+    for ax, title in zip(axes, ("Ground truth", answer_title), strict=True):
         ax.set_title(title, fontsize=13, weight="semibold", pad=10)
         ax.set_aspect("equal")
         ax.set_xlim(-0.05, width + 0.05)

@@ -8,13 +8,13 @@ from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.lines import Line2D
 
 from visual_geometry_bench.datagen.convex_hull_tasks import _to_points as _convex_to_points
 from visual_geometry_bench.datagen.delaunay_tasks import _to_points as _delaunay_to_points
 
-from .render import register_renderer
+from .render import get_answer_label, register_renderer
 from .styles import COLOURS
-
 
 _FRIENDLY_TITLES = {
     "convex_hull_ordering": "Convex Hull Ordering",
@@ -35,10 +35,11 @@ def _format_problem_title(record: Mapping[str, Any]) -> str:
 
 
 def _make_two_panel(record: Mapping[str, Any]) -> tuple[plt.Figure, list[plt.Axes]]:
-    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
-    fig.subplots_adjust(bottom=0.18, wspace=0.25)
+    fig, axes = plt.subplots(1, 2, figsize=(11.0, 5.5))
+    fig.subplots_adjust(left=0.03, right=0.97, bottom=0.16, wspace=-0.25)
     fig.suptitle(_format_problem_title(record), fontsize=15, weight="bold")
-    for ax, title in zip(axes, ("Ground truth", "Answer"), strict=True):
+    titles = ("Ground truth", get_answer_label(record))
+    for ax, title in zip(axes, titles, strict=True):
         ax.set_title(title, fontsize=13, weight="semibold", pad=10)
         ax.set_aspect("equal")
         ax.set_xlim(*DEFAULT_VIEW_LIMITS)
@@ -48,15 +49,22 @@ def _make_two_panel(record: Mapping[str, Any]) -> tuple[plt.Figure, list[plt.Axe
     return fig, list(axes)
 
 
-def _scatter_with_labels(ax: plt.Axes, points: np.ndarray) -> None:
+def _scatter_with_labels(
+    ax: plt.Axes,
+    points: np.ndarray,
+    *,
+    label_fontsize: int = 7,
+    label_colours: Mapping[int, str] | None = None,
+) -> None:
     ax.scatter(points[:, 0], points[:, 1], s=80, color=COLOURS["points"], edgecolors="white", linewidths=1.5, zorder=3)
+    custom_colours = label_colours or {}
     for idx, (x, y) in enumerate(points):
         ax.text(
             x + 0.02,
             y + 0.02,
             str(idx),
-            color="black",
-            fontsize=11,
+            color=custom_colours.get(idx, "black"),
+            fontsize=label_fontsize,
             ha="left",
             va="bottom",
             weight="bold",
@@ -189,23 +197,89 @@ def _render_convex_hull(
     _scatter_with_labels(ax_gt, points)
 
     hull_indices = list(map(int, ground_truth))
+    legend_entries: dict[str, Any] = {}
     if hull_indices:
-        _draw_polyline(ax_gt, points, hull_indices, color=COLOURS["truth"], closed=True)
-        for idx in hull_indices:
-            x, y = points[idx]
-            ax_gt.scatter([x], [y], color=COLOURS["truth"], s=100, edgecolors="white", linewidths=2, zorder=4)
-
-    _scatter_with_labels(ax_ans, points)
+        gt_line = _draw_polyline(ax_gt, points, hull_indices, color=COLOURS["truth"], closed=True)
+        if gt_line:
+            legend_entries["Ground truth hull"] = gt_line
+        coords = points[hull_indices]
+        gt_scatter = ax_gt.scatter(
+            coords[:, 0],
+            coords[:, 1],
+            color=COLOURS["truth"],
+            s=100,
+            edgecolors="white",
+            linewidths=2,
+            zorder=4,
+        )
+        legend_entries.setdefault("Ground truth hull", gt_scatter)
 
     parsed_answer = _coerce_index_list(answer)
     if parsed_answer is None:
+        _scatter_with_labels(ax_ans, points)
         _draw_invalid_message(ax_ans, "Invalid answer")
     else:
-        _draw_polyline(ax_ans, points, parsed_answer, color=COLOURS["answer"], closed=True)
+        answer_points: list[int] = []
         for idx in parsed_answer:
             if 0 <= idx < len(points):
-                x, y = points[idx]
-                ax_ans.scatter([x], [y], color=COLOURS["answer"], s=100, edgecolors="white", linewidths=2, zorder=4)
+                answer_points.append(idx)
+
+        truth_set = set(hull_indices)
+        ans_set = set(answer_points)
+        missed = sorted(truth_set - ans_set)
+        extra = sorted(ans_set - truth_set)
+        correct = sorted(ans_set & truth_set)
+
+        label_overrides: dict[int, str] = {}
+        for idx in missed:
+            label_overrides[idx] = COLOURS["missed_vertex"]
+        for idx in extra:
+            label_overrides[idx] = COLOURS["extra_vertex"]
+
+        _scatter_with_labels(ax_ans, points, label_colours=label_overrides)
+
+        _draw_polyline(ax_ans, points, parsed_answer, color=COLOURS["answer"], closed=True)
+        answer_label = get_answer_label(record)
+
+        def _scatter_subset(indices: list[int], *, color: str, label: str) -> None:
+            if not indices:
+                return
+            coords = points[indices]
+            handle = ax_ans.scatter(
+                coords[:, 0],
+                coords[:, 1],
+                color=color,
+                s=115,
+                edgecolors="white",
+                linewidths=2.2,
+                zorder=5,
+            )
+            legend_entries[label] = handle
+
+        if correct:
+            _scatter_subset(correct, color=COLOURS["answer"], label=answer_label)
+        elif answer_points:
+            legend_entries.setdefault(
+                answer_label,
+                Line2D([], [], color=COLOURS["answer"], linewidth=2),
+            )
+        if missed:
+            _scatter_subset(missed, color=COLOURS["missed_vertex"], label="Missed hull vertex")
+        if extra:
+            _scatter_subset(extra, color=COLOURS["extra_vertex"], label="Extra vertex")
+
+    if legend_entries:
+        assert ax_ans.figure is fig
+        fig.subplots_adjust(top=0.7)
+        fig.legend(
+            legend_entries.values(),
+            legend_entries.keys(),
+            loc="upper center",
+            bbox_to_anchor=(0.5, 0.88),
+            ncol=len(legend_entries),
+            frameon=True,
+            framealpha=0.95,
+        )
 
     return fig
 

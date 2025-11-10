@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 from visual_geometry_bench.datagen.topology_enumeration import canonicalize, get_solutions
 
-from .render import register_renderer
+from .render import get_answer_label, register_renderer
 from .styles import COLOURS
 from .topology_common import _DEFAULT_CORNER_ORDER, _text_block
 
@@ -172,7 +172,7 @@ def _build_truth_lines(datagen_args: Mapping[str, Any]) -> list[str]:
     return lines
 
 
-def _build_answer_lines(answer: Any) -> list[str]:
+def _build_answer_lines(answer: Any, section_label: str) -> list[str]:
     parsed, errors = _parse_topology_answer(answer)
     base: list[str] = []
     if parsed is not None:
@@ -181,7 +181,7 @@ def _build_answer_lines(answer: Any) -> list[str]:
     lines = _format_configuration_block(
         base,
         parsed,
-        section_label="Model answers",
+        section_label=section_label,
         include_canonical=True,
         canonical_label=_CANONICAL_LABEL,
         errors=errors if errors else None,
@@ -210,7 +210,10 @@ def _render_topology_enumeration(
 
     _prepare_text_axis(ax_truth, None, COLOURS["truth"])
     if ax_answer is not None:
-        _prepare_text_axis(ax_answer, None, COLOURS["answer"])
+        model_label = get_answer_label(record, default="Model answers")
+        _prepare_text_axis(ax_answer, model_label, COLOURS["answer"])
+    else:
+        model_label = None
 
     truth_lines = _build_truth_lines(record.get("datagen_args", {}))
 
@@ -219,7 +222,7 @@ def _render_topology_enumeration(
     if not answer_provided or ax_answer is None:
         return fig
 
-    answer_lines = _build_answer_lines(answer)
+    answer_lines = _build_answer_lines(answer, model_label or "Model answers")
 
     _text_block(ax_answer, answer_lines, color=COLOURS["answer"])
 

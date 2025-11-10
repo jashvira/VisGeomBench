@@ -21,7 +21,7 @@ from visual_geometry_bench.datagen.half_subdivision_neighbours import (
     _prepare_case,
 )
 
-from .render import register_renderer
+from .render import get_answer_label, register_renderer
 from .styles import COLOURS
 
 
@@ -281,6 +281,7 @@ def _add_highlight_legend(
     has_model_answer: bool,
     location: str = "upper right",
     bbox_anchor: tuple[float, float] | None = None,
+    model_label: str | None = None,
 ) -> None:
     handles = [
         Patch(
@@ -300,12 +301,13 @@ def _add_highlight_legend(
             )
         )
     if has_model_answer:
+        neighbour_label = f"{model_label} neighbour" if model_label else "Model answer neighbour"
         handles.append(
             Patch(
                 facecolor="white",
                 edgecolor=COLOURS["answer"],
                 linewidth=2.0,
-                label="Model answer neighbour",
+                label=neighbour_label,
             )
         )
     legend_kwargs = {
@@ -378,6 +380,7 @@ def _render_half_subdivision(
 ) -> plt.Figure:
     datagen_args = record.get("datagen_args", {})
     leaves, dim, axis_cycle, default_target, default_ground = _generate_case(datagen_args)
+    model_label = get_answer_label(record, default="Model answer")
 
     target_label_raw = datagen_args.get("target_leaf")
     target_label = target_label_raw if isinstance(target_label_raw, str) else None
@@ -427,7 +430,7 @@ def _render_half_subdivision(
         answer_lines = _format_label_lines(parsed_answer)
         _render_text_block(
             ax_ans,
-            title="Model answer",
+            title=model_label,
             lines=answer_lines,
             empty_message="(none)",
             colour=COLOURS["answer"],
@@ -454,6 +457,7 @@ def _render_half_subdivision(
             has_model_answer=bool(model_answer_labels),
             location="upper left",
             bbox_anchor=(1.02, 1.0),
+            model_label=model_label,
         )
     else:
         ax_spatial = fig.add_subplot(gs[:, 1])
@@ -482,6 +486,7 @@ def _render_half_subdivision(
             has_model_answer=bool(model_answer_labels),
             location="upper left",
             bbox_anchor=(1.02, 1.0),
+            model_label=model_label,
         )
 
     _enable_leaf_click(fig, interactive_artists)

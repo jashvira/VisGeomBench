@@ -26,7 +26,7 @@ from visual_geometry_bench.datagen.utils import (
     permute_config,
 )
 
-from .render import register_renderer
+from .render import get_answer_label, register_renderer
 from .styles import COLOURS
 from .topology_common import (
     _DEFAULT_CORNER_ORDER,
@@ -164,6 +164,7 @@ def _render_topology_edge(
     corner_order_display = list(corner_order_tuple)
     edge_order_display = list(edge_order_tuple)
     subtask = datagen_args.get("subtask", "enumerate_edges")
+    model_label = get_answer_label(record, default="Model answers")
 
     resolved_cases = _resolved_cases_from_args(datagen_args, corner_order_tuple)
     cases: list[tuple[int, int, int, int]] = list(resolved_cases or [])
@@ -243,8 +244,7 @@ def _render_topology_edge(
         edge_order_tuple = tuple(_DEFAULT_EDGE_ORDER)
         datagen_edge_index_map(edge_order_tuple)
 
-    legend_handles: list[Any] | None = None
-    legend_labels: list[str] | None = None
+    legend_entries: dict[str, Any] = {}
 
     behaviours_gt: list[str | None] = [None] * num_cases
     if is_classify:
@@ -310,7 +310,7 @@ def _render_topology_edge(
                 ax,
                 ans_connections,
                 COLOURS["answer"],
-                "Model answers",
+                model_label,
                 edge_centers,
                 offset=-1.0,
                 line_kwargs={
@@ -320,16 +320,17 @@ def _render_topology_edge(
                 },
             )
 
-        if legend_handles is None:
-            handles, labels = ax.get_legend_handles_labels()
-            if handles:
-                legend_handles = handles
-                legend_labels = labels
+        handles, labels = ax.get_legend_handles_labels()
+        for handle, label in zip(handles, labels, strict=False):
+            if label and label not in legend_entries:
+                legend_entries[label] = handle
 
     for idx in range(num_cases, len(axes)):
         axes[idx].axis("off")
 
-    if legend_handles and (not is_classify or len(legend_handles) > 1):
+    if legend_entries and (not is_classify or len(legend_entries) > 1):
+        legend_handles = list(legend_entries.values())
+        legend_labels = list(legend_entries.keys())
         fig.legend(
             legend_handles,
             legend_labels,

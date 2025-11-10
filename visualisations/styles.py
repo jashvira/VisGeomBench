@@ -25,6 +25,8 @@ COLOURS: dict[str, str] = {
     "partial_accent": "#F57C00",
     "neutral_panel": "#ECEFF1",
     "neutral_text": "#37474f",
+    "missed_vertex": "#D32F2F",
+    "extra_vertex": "#8E24AA",
 }
 
 # Default font/line settings applied via matplotlib rcParams when rendering.

@@ -33,6 +33,7 @@ def visualise_record(
     fmt: str = "png",
     output_stub: str | None = None,
     metadata_caption: str | None = None,
+    answer_label: str | None = None,
     show: bool | None = None,
 ) -> RendererResult:
     """Render a dataset record (and optional model answer) into figure(s)."""
@@ -47,14 +48,36 @@ def visualise_record(
 
     _ensure_matplotlib_style()
 
-    result = renderer(record, answer, detail, show=show)
+    payload: Mapping[str, Any]
+    if answer_label:
+        payload = dict(record)
+        render_meta = dict(payload.get("_render_meta", {}))
+        render_meta["answer_label"] = answer_label
+        payload["_render_meta"] = render_meta
+    else:
+        payload = record
+
+    result = renderer(payload, answer, detail, show=show)
 
     def _apply_metadata_caption(fig: plt.Figure) -> None:
         if not metadata_caption:
             return
+        # Ensure there is breathing room below the axes for the caption
+        # Disable incompatible layout engines before manual adjustments (e.g., constrained layout)
+        try:
+            layout_engine = fig.get_layout_engine()
+        except AttributeError:  # Matplotlib < 3.8 compatibility
+            layout_engine = None
+        if layout_engine:
+            fig.set_layout_engine(None)
+
+        current_bottom = fig.subplotpars.bottom
+        target_bottom = 0.12
+        if current_bottom < target_bottom:
+            fig.subplots_adjust(bottom=target_bottom)
         fig.text(
             0.5,
-            0.02,
+            0.01,
             metadata_caption,
             ha="center",
             va="bottom",
@@ -83,10 +106,19 @@ def visualise_record(
                 fig.savefig(target, format=fmt, dpi=150)
                 plt.close(fig)
         else:
-            result.savefig(output_path, format=fmt, dpi=150)
+            result.savefig(output_path, format=fmt, dpi=150, bbox_inches="tight")
             plt.close(result)
 
     return result
+
+
+def get_answer_label(record: Mapping[str, Any], default: str = "Answer") -> str:
+    meta = record.get("_render_meta") if isinstance(record, Mapping) else None
+    if isinstance(meta, Mapping):
+        label = meta.get("answer_label")
+        if isinstance(label, str) and label.strip():
+            return label
+    return default
 
 
 def _ensure_matplotlib_style() -> None:
