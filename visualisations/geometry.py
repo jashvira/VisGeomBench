@@ -55,18 +55,36 @@ def _scatter_with_labels(
     *,
     label_fontsize: int = 7,
     label_colours: Mapping[int, str] | None = None,
+    circle_label_params: tuple[np.ndarray, float] | None = None,
 ) -> None:
     ax.scatter(points[:, 0], points[:, 1], s=80, color=COLOURS["points"], edgecolors="white", linewidths=1.5, zorder=3)
     custom_colours = label_colours or {}
+    if circle_label_params:
+        center, radius = circle_label_params
+        label_radius = radius * 1.14
+    else:
+        center = None
+        label_radius = None
     for idx, (x, y) in enumerate(points):
+        if label_radius is not None and center is not None:
+            angle = np.arctan2(y - center[1], x - center[0])
+            label_x = center[0] + label_radius * np.cos(angle)
+            label_y = center[1] + label_radius * np.sin(angle)
+            ha = "center"
+            va = "center"
+        else:
+            label_x = x + 0.02
+            label_y = y + 0.02
+            ha = "left"
+            va = "bottom"
         ax.text(
-            x + 0.02,
-            y + 0.02,
+            label_x,
+            label_y,
             str(idx),
             color=custom_colours.get(idx, "black"),
             fontsize=label_fontsize,
-            ha="left",
-            va="bottom",
+            ha=ha,
+            va=va,
             weight="bold",
             bbox=None,
         )
@@ -194,7 +212,8 @@ def _render_convex_hull(
                 zorder=1,
             )
 
-    _scatter_with_labels(ax_gt, points)
+    label_circle = circle_params if is_circle else None
+    _scatter_with_labels(ax_gt, points, circle_label_params=label_circle)
 
     hull_indices = list(map(int, ground_truth))
     legend_entries: dict[str, Any] = {}
@@ -216,7 +235,7 @@ def _render_convex_hull(
 
     parsed_answer = _coerce_index_list(answer)
     if parsed_answer is None:
-        _scatter_with_labels(ax_ans, points)
+        _scatter_with_labels(ax_ans, points, circle_label_params=label_circle)
         _draw_invalid_message(ax_ans, "Invalid answer")
     else:
         answer_points: list[int] = []
@@ -236,7 +255,7 @@ def _render_convex_hull(
         for idx in extra:
             label_overrides[idx] = COLOURS["extra_vertex"]
 
-        _scatter_with_labels(ax_ans, points, label_colours=label_overrides)
+        _scatter_with_labels(ax_ans, points, label_colours=label_overrides, circle_label_params=label_circle)
 
         draw_indices = answer_points if len(answer_points) >= 2 else []
         if draw_indices:
