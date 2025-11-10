@@ -12,6 +12,12 @@ from visual_geometry_bench.evaluation.answer_parser import PythonLiteralParser
 from visualisations import visualise_record
 
 
+def _clean_dataset_name(stem: str) -> str:
+    cleaned = stem.replace("_", " ").replace("curated", "")
+    cleaned = " ".join(cleaned.split())
+    return cleaned.title()
+
+
 def _load_rows(path: Path) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     with path.open("r", encoding="utf-8") as handle:
@@ -92,7 +98,8 @@ def render_results(results_path: Path, output_dir: Path, fmt: str, detail: bool,
     run_id = results_path.parent.name
     model_fragment = results_path.parent.parent.name if results_path.parent.parent else "unknown-model"
     model_name = model_fragment.split("--")[-1].replace("_", " ")
-    metadata_caption = f"Model: {model_name} • Run: {run_id}"
+    dataset_name = _clean_dataset_name(results_path.parent.name)
+    metadata_caption = f"Model: {model_name} • {dataset_name} • Run: {run_id}"
 
     target_dir = output_dir / run_id
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -126,6 +133,7 @@ def render_results(results_path: Path, output_dir: Path, fmt: str, detail: bool,
                 fmt=fmt,
                 output_stub=f"{question_number:03d}",
                 metadata_caption=metadata_caption,
+                answer_label=model_name,
             )
             print(f"[{question_number:03d}] rendered (id={record_id})")
         except Exception as exc:  # noqa: BLE001 - propagate info but continue batching
@@ -140,6 +148,7 @@ def render_results(results_path: Path, output_dir: Path, fmt: str, detail: bool,
                     fmt=fmt,
                     output_stub=f"{question_number:03d}",
                     metadata_caption=metadata_caption,
+                    answer_label=model_name,
                 )
                 print(f"[{question_number:03d}] rendered (fallback, id={record_id})")
             except Exception as fallback_exc:
