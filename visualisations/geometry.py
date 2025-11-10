@@ -238,7 +238,9 @@ def _render_convex_hull(
 
         _scatter_with_labels(ax_ans, points, label_colours=label_overrides)
 
-        _draw_polyline(ax_ans, points, parsed_answer, color=COLOURS["answer"], closed=True)
+        draw_indices = answer_points if len(answer_points) >= 2 else []
+        if draw_indices:
+            _draw_polyline(ax_ans, points, draw_indices, color=COLOURS["answer"], closed=True)
         answer_label = get_answer_label(record)
 
         def _scatter_subset(indices: list[int], *, color: str, label: str) -> None:
@@ -258,7 +260,7 @@ def _render_convex_hull(
 
         if correct:
             _scatter_subset(correct, color=COLOURS["answer"], label=answer_label)
-        elif answer_points:
+        elif draw_indices:
             legend_entries.setdefault(
                 answer_label,
                 Line2D([], [], color=COLOURS["answer"], linewidth=2),
