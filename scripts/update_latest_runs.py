@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Utility to copy a new eval run into the top-level latest_runs directory.
+"""Utility to copy a new eval run into the top-level blog_prep directory.
 
 Usage:
     python scripts/update_latest_runs.py <model_dir_name> <run_id>
@@ -11,7 +11,7 @@ Example:
 
 The script reads outputs/evals/<model_dir_name>/<run_id>/metadata.json to
 discover which dataset was evaluated, then copies that run into
-latest_runs/<model_dir_name>/<dataset_stem>, replacing any previous entry for
+blog_prep/<model_dir_name>/<dataset_stem>, replacing any previous entry for
 the same dataset.
 """
 
@@ -26,7 +26,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 EVALS_ROOT = ROOT / "outputs" / "evals"
-LATEST_ROOT = ROOT / "latest_runs"
+LATEST_ROOT = ROOT / "blog_prep"
 
 
 def copy_run(model_dir: str, run_id: str, force: bool = False) -> Path | None:
