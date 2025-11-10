@@ -8,9 +8,9 @@ metadata = { tags = ["geometry", "convex-hull", "curated"], difficulty = "mixed"
 
 datagen_args_grid = [
 { num_points = 10, seed = 21, metadata = { difficulty = "easy"} },
-{ num_points = 36, seed = 23, metadata = { difficulty = "hard"} },
-{ num_points = 50, seed = 1, metadata = { difficulty = "hard"} },
-{ num_points = 18, seed = 109, point_distribution = "circle", metadata = { difficulty = "easy"} },
-{ num_points = 24, seed = 777, point_distribution = "circle", metadata = { difficulty = "medium"} },
-{ num_points = 40, seed = 901, point_distribution = "circle", metadata = { difficulty = "hard"} },
+{ num_points = 36, seed = 23, metadata = { difficulty = "medium"} },
+{ num_points = 75, seed = 10, metadata = { difficulty = "hard"} },
+{ num_points = 100, seed = 100, metadata = { difficulty = "hard"} },
+{ num_points = 35, seed = 777, point_distribution = "circle", metadata = { difficulty = "medium"} },
+{ num_points = 74, seed = 901, point_distribution = "circle", metadata = { difficulty = "hard"} },
 ]
