@@ -16,11 +16,12 @@ from matplotlib.offsetbox import AnnotationBbox, OffsetImage
 from matplotlib.patches import Patch
 
 
-BASE_DIR = pathlib.Path(__file__).parent
-OUTPUT_PATH = BASE_DIR / "task_performance.png"
-SUBPLOT_PATH = BASE_DIR / "task_performance_subplots.png"
-OVERALL_PATH = BASE_DIR / "task_performance_overall.png"
-ASSET_DIR = BASE_DIR / "assets"
+PLOT_DIR = pathlib.Path(__file__).resolve().parent
+BASE_DIR = PLOT_DIR.parent
+OUTPUT_PATH = PLOT_DIR / "task_performance.png"
+SUBPLOT_PATH = PLOT_DIR / "task_performance_subplots.png"
+OVERALL_PATH = PLOT_DIR / "task_performance_overall.png"
+ASSET_DIR = PLOT_DIR / "assets"
 
 MODEL_BRANDING = {
     "gpt-5-2025-08-07": {
