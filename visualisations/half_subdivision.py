@@ -501,7 +501,22 @@ def _render_half_subdivision(
     )
     parsed_answer = _coerce_string_list(answer)
     model_answer_labels: list[str] = parsed_answer if isinstance(parsed_answer, list) else []
-    show_model_answer = detail and bool(model_answer_labels)
+    has_answer = bool(model_answer_labels)
+
+    highlight_labels: list[str] = list(ground_truth_labels)
+
+    gt_set = {label for label in ground_truth_labels if isinstance(label, str)}
+    answer_set = {label for label in model_answer_labels if isinstance(label, str)}
+    correct_labels = sorted(gt_set & answer_set) if has_answer else []
+    missed_labels = sorted(gt_set - answer_set) if has_answer else []
+    extra_labels = sorted(answer_set - gt_set) if has_answer else []
+    has_errors = bool(missed_labels or extra_labels)
+    model_labels_for_render = model_answer_labels if has_errors else []
+    correct_for_render = correct_labels if has_errors else []
+    missed_for_render = missed_labels if has_errors else []
+    extra_for_render = extra_labels if has_errors else []
+
+    show_model_answer = detail and has_answer and has_errors
     text_rows = 2 if show_model_answer else 1
     gs = fig.add_gridspec(text_rows, 2, width_ratios=[1, 2], hspace=0.35, wspace=0.25)
 
@@ -515,13 +530,6 @@ def _render_half_subdivision(
         colour=COLOURS["truth"],
     )
 
-    highlight_labels: list[str] = list(ground_truth_labels)
-
-    gt_set = {label for label in ground_truth_labels if isinstance(label, str)}
-    answer_set = {label for label in model_answer_labels if isinstance(label, str)}
-    correct_labels = sorted(gt_set & answer_set) if answer_set else []
-    missed_labels = sorted(gt_set - answer_set) if answer_set else []
-    extra_labels = sorted(answer_set - gt_set) if answer_set else []
     if show_model_answer:
         ax_ans = fig.add_subplot(gs[1, 0])
         diff_lines = _format_answer_diffs(correct_labels, extra_labels, missed_labels)
@@ -543,10 +551,10 @@ def _render_half_subdivision(
                 leaves,
                 target_label=target_label,
                 ground_truth_labels=highlight_labels,
-                model_answer_labels=model_answer_labels,
-                correct_labels=correct_labels,
-                missed_labels=missed_labels,
-                extra_labels=extra_labels,
+                model_answer_labels=model_labels_for_render,
+                correct_labels=correct_for_render,
+                missed_labels=missed_for_render,
+                extra_labels=extra_for_render,
                 axis_cycle=axis_cycle,
             )
         )
@@ -554,10 +562,10 @@ def _render_half_subdivision(
         _add_highlight_legend(
             ax_spatial,
             has_ground_truth=bool(highlight_labels),
-            has_model_answer=bool(model_answer_labels),
-            has_correct=bool(correct_labels),
-            has_missed=bool(missed_labels),
-            has_extra=bool(extra_labels),
+            has_model_answer=bool(model_labels_for_render),
+            has_correct=bool(correct_for_render),
+            has_missed=bool(missed_for_render),
+            has_extra=bool(extra_for_render),
             location="upper left",
             bbox_anchor=(1.02, 1.0),
             model_label=model_label,
@@ -580,19 +588,19 @@ def _render_half_subdivision(
                 leaves,
                 target_label=target_label,
                 ground_truth_labels=highlight_labels,
-                model_answer_labels=model_answer_labels,
-                correct_labels=correct_labels,
-                missed_labels=missed_labels,
-                extra_labels=extra_labels,
+                model_answer_labels=model_labels_for_render,
+                correct_labels=correct_for_render,
+                missed_labels=missed_for_render,
+                extra_labels=extra_for_render,
             )
         )
         _add_highlight_legend(
             ax_spatial,
             has_ground_truth=bool(highlight_labels),
-            has_model_answer=bool(model_answer_labels),
-            has_correct=bool(correct_labels),
-            has_missed=bool(missed_labels),
-            has_extra=bool(extra_labels),
+            has_model_answer=bool(model_labels_for_render),
+            has_correct=bool(correct_for_render),
+            has_missed=bool(missed_for_render),
+            has_extra=bool(extra_for_render),
             location="upper left",
             bbox_anchor=(1.02, 1.0),
             model_label=model_label,
