@@ -310,28 +310,67 @@ def _format_label_lines(labels: list[str]) -> list[str]:
     return lines
 
 
-def _format_answer_diffs(
+def _render_diff_block(
+    ax: plt.Axes,
+    *,
+    title: str,
     correct: list[str],
     extra: list[str],
     missed: list[str],
-) -> list[str]:
-    lines: list[str] = []
+) -> None:
+    ax.set_axis_off()
+    ax.set_title(title, fontsize=13, weight="semibold", pad=10)
 
-    def _add_section(title: str, entries: list[str]) -> None:
+    sections = [
+        ("Correct", correct, COLOURS["answer"]),
+        ("Extra", extra, COLOURS["extra_vertex"]),
+        ("Missed", missed, COLOURS["missed_vertex"]),
+    ]
+
+    y = 0.95
+    for heading, entries, colour in sections:
         if not entries:
-            return
-        lines.append(f"{title}:")
+            continue
+        ax.text(
+            0.04,
+            y,
+            f"{heading}:",
+            ha="left",
+            va="top",
+            fontsize=11,
+            color=colour,
+            weight="semibold",
+            transform=ax.transAxes,
+        )
+        y -= 0.06
         for label in sorted(entries):
             safe = label if label else '""'
-            lines.append(f"  • {safe}")
-        lines.append("")
+            ax.text(
+                0.06,
+                y,
+                f"• {safe}",
+                ha="left",
+                va="top",
+                fontsize=10.5,
+                color=colour,
+                family="monospace",
+                transform=ax.transAxes,
+            )
+            y -= 0.05
+        y -= 0.03
 
-    _add_section("Correct", correct)
-    _add_section("Extra", extra)
-    _add_section("Missed", missed)
-    if lines and lines[-1] == "":
-        lines.pop()
-    return lines
+    if y == 0.95:
+        ax.text(
+            0.04,
+            y,
+            "(none)",
+            ha="left",
+            va="top",
+            fontsize=11,
+            color=COLOURS["answer"],
+            family="monospace",
+            transform=ax.transAxes,
+        )
 
 
 def _add_highlight_legend(
@@ -382,7 +421,7 @@ def _add_highlight_legend(
             )
         )
     if has_extra:
-        extra_label = f"{model_label} extra" if model_label else "Extra neighbour"
+        extra_label = "Extra neighbour"
         handles.append(
             Patch(
                 facecolor="white",
@@ -532,14 +571,12 @@ def _render_half_subdivision(
 
     if show_model_answer:
         ax_ans = fig.add_subplot(gs[1, 0])
-        diff_lines = _format_answer_diffs(correct_labels, extra_labels, missed_labels)
-        answer_lines = diff_lines if diff_lines else _format_label_lines(model_answer_labels)
-        _render_text_block(
+        _render_diff_block(
             ax_ans,
             title=model_label,
-            lines=answer_lines,
-            empty_message="(none)",
-            colour=COLOURS["answer"],
+            correct=correct_labels,
+            extra=extra_labels,
+            missed=missed_labels,
         )
     interactive_artists: list[plt.Artist] = []
 
