@@ -310,69 +310,6 @@ def _format_label_lines(labels: list[str]) -> list[str]:
     return lines
 
 
-def _render_diff_block(
-    ax: plt.Axes,
-    *,
-    title: str,
-    correct: list[str],
-    extra: list[str],
-    missed: list[str],
-) -> None:
-    ax.set_axis_off()
-    ax.set_title(title, fontsize=13, weight="semibold", pad=10)
-
-    sections = [
-        ("Correct", correct, COLOURS["answer"]),
-        ("Extra", extra, COLOURS["extra_vertex"]),
-        ("Missed", missed, COLOURS["missed_vertex"]),
-    ]
-
-    y = 0.95
-    for heading, entries, colour in sections:
-        if not entries:
-            continue
-        ax.text(
-            0.04,
-            y,
-            f"{heading}:",
-            ha="left",
-            va="top",
-            fontsize=11,
-            color=colour,
-            weight="semibold",
-            transform=ax.transAxes,
-        )
-        y -= 0.06
-        for label in sorted(entries):
-            safe = label if label else '""'
-            ax.text(
-                0.06,
-                y,
-                f"• {safe}",
-                ha="left",
-                va="top",
-                fontsize=10.5,
-                color=colour,
-                family="monospace",
-                transform=ax.transAxes,
-            )
-            y -= 0.05
-        y -= 0.03
-
-    if y == 0.95:
-        ax.text(
-            0.04,
-            y,
-            "(none)",
-            ha="left",
-            va="top",
-            fontsize=11,
-            color=COLOURS["answer"],
-            family="monospace",
-            transform=ax.transAxes,
-        )
-
-
 def _add_highlight_legend(
     ax: plt.Axes,
     *,
@@ -571,12 +508,12 @@ def _render_half_subdivision(
 
     if show_model_answer:
         ax_ans = fig.add_subplot(gs[1, 0])
-        _render_diff_block(
+        _render_text_block(
             ax_ans,
             title=model_label,
-            correct=correct_labels,
-            extra=extra_labels,
-            missed=missed_labels,
+            lines=_format_label_lines(model_answer_labels),
+            empty_message="(none)",
+            colour=COLOURS["answer"],
         )
     interactive_artists: list[plt.Artist] = []
 
