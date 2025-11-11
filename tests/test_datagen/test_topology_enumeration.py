@@ -6,6 +6,12 @@ from visual_geometry_bench.datagen.topology_enumeration import (
     canonicalize,
     get_solutions,
 )
+from visual_geometry_bench.datagen.utils import CANONICAL_CORNER_ORDER
+
+
+def _reorder_config(config, corner_order):
+    index_map = {corner: idx for idx, corner in enumerate(CANONICAL_CORNER_ORDER)}
+    return tuple(config[index_map[name]] for name in corner_order)
 
 
 class TestCanonicalize:
@@ -60,6 +66,23 @@ class TestGetSolutions:
         if (1, 0, 0, 0) in canonical_sols:
             assert (0, 0, 1, 0) in scrambled_sols
 
+    @pytest.mark.parametrize(
+        "corner_order",
+        [
+            ("top-left", "bottom-right", "bottom-left", "top-right"),
+            ("top-right", "bottom-left", "top-left", "bottom-right"),
+        ],
+    )
+    def test_corner_permutation_matches_manual_mapping(self, corner_order):
+        """Every tuple must map exactly to the requested corner order."""
+
+        canonical_solutions = get_solutions(n_classes=3, corner_order=CANONICAL_CORNER_ORDER)
+        reordered_expected = [_reorder_config(cfg, corner_order) for cfg in canonical_solutions]
+
+        permuted_solutions = get_solutions(n_classes=3, corner_order=corner_order)
+
+        assert sorted(permuted_solutions) == sorted(reordered_expected)
+
     def test_invalid_n_classes(self):
         """Invalid n_classes raises ValueError."""
         with pytest.raises(ValueError, match="n_classes must be 2 or 3"):
@@ -74,4 +97,3 @@ class TestGetSolutions:
 
         with pytest.raises(ValueError, match="corner_order must be a permutation"):
             get_solutions(n_classes=2, corner_order=("bottom-left", "bottom-left", "top-right", "top-left"))
-

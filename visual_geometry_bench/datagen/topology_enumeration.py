@@ -17,6 +17,15 @@ from visual_geometry_bench.datagen.utils import (
 )
 
 
+def _inverse_perm(perm: tuple[int, int, int, int]) -> tuple[int, int, int, int]:
+    """Return the inverse permutation (perm maps canonical→target)."""
+
+    inv = [0, 0, 0, 0]
+    for idx, pos in enumerate(perm):
+        inv[pos] = idx
+    return tuple(inv)  # type: ignore[return-value]
+
+
 # Ground truth solutions for n=2: configurations forcing 2 classes to meet inside.
 # Stored in canonical corner order.
 _SOLUTIONS_TWO_CLASSES: list[tuple[int, int, int, int]] = [
@@ -134,7 +143,8 @@ def get_solutions(
         return canonical_solutions.copy()
 
     perm = corner_order_permutation(corner_order)
-    return [permute_config(cfg, perm) for cfg in canonical_solutions]
+    inv = _inverse_perm(perm)
+    return [permute_config(cfg, inv) for cfg in canonical_solutions]
 
 
 def build_problem_id(
