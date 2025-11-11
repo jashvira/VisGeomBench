@@ -93,12 +93,18 @@ def _draw_leaves(
     target_label: str | None = None,
     ground_truth_labels: Iterable[str] | None = None,
     model_answer_labels: Iterable[str] | None = None,
+    correct_labels: Iterable[str] | None = None,
+    missed_labels: Iterable[str] | None = None,
+    extra_labels: Iterable[str] | None = None,
     base_colour: str = COLOURS["annotation"],
 ) -> list[plt.Artist]:
-    """Outline all leaves, emphasising target (blue), ground truth (orange), model answer (red)."""
+    """Outline all leaves, with explicit colours for target/correct/missed/extra cells."""
 
     gt_set = {(label or "") for label in (ground_truth_labels or []) if isinstance(label, str)}
     model_set = {(label or "") for label in (model_answer_labels or []) if isinstance(label, str)}
+    correct_set = {(label or "") for label in (correct_labels or []) if isinstance(label, str)}
+    missed_set = {(label or "") for label in (missed_labels or []) if isinstance(label, str)}
+    extra_set = {(label or "") for label in (extra_labels or []) if isinstance(label, str)}
     target = (target_label or "") if target_label is not None else None
 
     artists: list[plt.Artist] = []
@@ -114,6 +120,18 @@ def _draw_leaves(
             edgecolor = COLOURS["reference"]
             linewidth = 2.8
             zorder = 3
+        elif label_key in correct_set:
+            edgecolor = COLOURS["answer"]
+            linewidth = 2.4
+            zorder = 2.7
+        elif label_key in missed_set:
+            edgecolor = COLOURS["missed_vertex"]
+            linewidth = 2.3
+            zorder = 2.6
+        elif label_key in extra_set:
+            edgecolor = COLOURS["extra_vertex"]
+            linewidth = 2.2
+            zorder = 2.4
         elif label_key in gt_set:
             edgecolor = COLOURS["partial"]
             linewidth = 2.2
@@ -174,10 +192,16 @@ def _draw_voxels(
     target_label: str | None,
     ground_truth_labels: Iterable[str] | None,
     model_answer_labels: Iterable[str] | None,
+    correct_labels: Iterable[str] | None,
+    missed_labels: Iterable[str] | None,
+    extra_labels: Iterable[str] | None,
     axis_cycle: tuple[str, ...],
 ) -> list[Poly3DCollection]:
     gt_set = {(label or "") for label in (ground_truth_labels or []) if isinstance(label, str)}
     model_set = {(label or "") for label in (model_answer_labels or []) if isinstance(label, str)}
+    correct_set = {(label or "") for label in (correct_labels or []) if isinstance(label, str)}
+    missed_set = {(label or "") for label in (missed_labels or []) if isinstance(label, str)}
+    extra_set = {(label or "") for label in (extra_labels or []) if isinstance(label, str)}
     target = (target_label or "") if target_label is not None else None
 
     artists: list[Poly3DCollection] = []
@@ -193,6 +217,18 @@ def _draw_voxels(
             facecolor = COLOURS["reference"]
             edgecolor = COLOURS["reference"]
             alpha = 0.45
+        elif label_key in correct_set:
+            facecolor = COLOURS["answer"]
+            edgecolor = COLOURS["answer"]
+            alpha = 0.4
+        elif label_key in missed_set:
+            facecolor = COLOURS["missed_vertex"]
+            edgecolor = COLOURS["missed_vertex"]
+            alpha = 0.4
+        elif label_key in extra_set:
+            facecolor = COLOURS["extra_vertex"]
+            edgecolor = COLOURS["extra_vertex"]
+            alpha = 0.35
         elif label_key in gt_set:
             facecolor = COLOURS["partial"]
             edgecolor = COLOURS["partial"]
@@ -274,11 +310,38 @@ def _format_label_lines(labels: list[str]) -> list[str]:
     return lines
 
 
+def _format_answer_diffs(
+    correct: list[str],
+    extra: list[str],
+    missed: list[str],
+) -> list[str]:
+    lines: list[str] = []
+
+    def _add_section(title: str, entries: list[str]) -> None:
+        if not entries:
+            return
+        lines.append(f"{title}:")
+        for label in sorted(entries):
+            safe = label if label else '""'
+            lines.append(f"  • {safe}")
+        lines.append("")
+
+    _add_section("Correct", correct)
+    _add_section("Extra", extra)
+    _add_section("Missed", missed)
+    if lines and lines[-1] == "":
+        lines.pop()
+    return lines
+
+
 def _add_highlight_legend(
     ax: plt.Axes,
     *,
     has_ground_truth: bool,
     has_model_answer: bool,
+    has_correct: bool = False,
+    has_missed: bool = False,
+    has_extra: bool = False,
     location: str = "upper right",
     bbox_anchor: tuple[float, float] | None = None,
     model_label: str | None = None,
@@ -291,7 +354,16 @@ def _add_highlight_legend(
             label="Target",
         ),
     ]
-    if has_ground_truth:
+    if has_correct:
+        handles.append(
+            Patch(
+                facecolor="white",
+                edgecolor=COLOURS["answer"],
+                linewidth=2.2,
+                label="Correct neighbour",
+            )
+        )
+    elif has_ground_truth:
         handles.append(
             Patch(
                 facecolor="white",
@@ -300,7 +372,26 @@ def _add_highlight_legend(
                 label="Ground truth neighbour",
             )
         )
-    if has_model_answer:
+    if has_missed:
+        handles.append(
+            Patch(
+                facecolor="white",
+                edgecolor=COLOURS["missed_vertex"],
+                linewidth=2.0,
+                label="Missed neighbour",
+            )
+        )
+    if has_extra:
+        extra_label = f"{model_label} extra" if model_label else "Extra neighbour"
+        handles.append(
+            Patch(
+                facecolor="white",
+                edgecolor=COLOURS["extra_vertex"],
+                linewidth=2.0,
+                label=extra_label,
+            )
+        )
+    elif has_model_answer and not has_correct:
         neighbour_label = f"{model_label} neighbour" if model_label else "Model answer neighbour"
         handles.append(
             Patch(
@@ -409,7 +500,8 @@ def _render_half_subdivision(
         weight="semibold",
     )
     parsed_answer = _coerce_string_list(answer)
-    show_model_answer = detail and isinstance(parsed_answer, list) and len(parsed_answer) > 0
+    model_answer_labels: list[str] = parsed_answer if isinstance(parsed_answer, list) else []
+    show_model_answer = detail and bool(model_answer_labels)
     text_rows = 2 if show_model_answer else 1
     gs = fig.add_gridspec(text_rows, 2, width_ratios=[1, 2], hspace=0.35, wspace=0.25)
 
@@ -424,10 +516,16 @@ def _render_half_subdivision(
     )
 
     highlight_labels: list[str] = list(ground_truth_labels)
-    model_answer_labels: list[str] = []
+
+    gt_set = {label for label in ground_truth_labels if isinstance(label, str)}
+    answer_set = {label for label in model_answer_labels if isinstance(label, str)}
+    correct_labels = sorted(gt_set & answer_set) if answer_set else []
+    missed_labels = sorted(gt_set - answer_set) if answer_set else []
+    extra_labels = sorted(answer_set - gt_set) if answer_set else []
     if show_model_answer:
         ax_ans = fig.add_subplot(gs[1, 0])
-        answer_lines = _format_label_lines(parsed_answer)
+        diff_lines = _format_answer_diffs(correct_labels, extra_labels, missed_labels)
+        answer_lines = diff_lines if diff_lines else _format_label_lines(model_answer_labels)
         _render_text_block(
             ax_ans,
             title=model_label,
@@ -435,7 +533,6 @@ def _render_half_subdivision(
             empty_message="(none)",
             colour=COLOURS["answer"],
         )
-        model_answer_labels = parsed_answer
     interactive_artists: list[plt.Artist] = []
 
     if dim == Dimension.D3:
@@ -447,6 +544,9 @@ def _render_half_subdivision(
                 target_label=target_label,
                 ground_truth_labels=highlight_labels,
                 model_answer_labels=model_answer_labels,
+                correct_labels=correct_labels,
+                missed_labels=missed_labels,
+                extra_labels=extra_labels,
                 axis_cycle=axis_cycle,
             )
         )
@@ -455,6 +555,9 @@ def _render_half_subdivision(
             ax_spatial,
             has_ground_truth=bool(highlight_labels),
             has_model_answer=bool(model_answer_labels),
+            has_correct=bool(correct_labels),
+            has_missed=bool(missed_labels),
+            has_extra=bool(extra_labels),
             location="upper left",
             bbox_anchor=(1.02, 1.0),
             model_label=model_label,
@@ -478,12 +581,18 @@ def _render_half_subdivision(
                 target_label=target_label,
                 ground_truth_labels=highlight_labels,
                 model_answer_labels=model_answer_labels,
+                correct_labels=correct_labels,
+                missed_labels=missed_labels,
+                extra_labels=extra_labels,
             )
         )
         _add_highlight_legend(
             ax_spatial,
             has_ground_truth=bool(highlight_labels),
             has_model_answer=bool(model_answer_labels),
+            has_correct=bool(correct_labels),
+            has_missed=bool(missed_labels),
+            has_extra=bool(extra_labels),
             location="upper left",
             bbox_anchor=(1.02, 1.0),
             model_label=model_label,
