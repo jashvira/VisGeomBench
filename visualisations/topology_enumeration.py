@@ -3,69 +3,31 @@
 from __future__ import annotations
 
 import ast
+import math
+from collections import Counter
 from typing import Any, Mapping, Sequence
 
 import matplotlib.pyplot as plt
 
-from visual_geometry_bench.datagen.topology_enumeration import canonicalize, get_solutions
+from visual_geometry_bench.datagen.topology_enumeration import (
+    canonicalize,
+    get_solutions,
+)
+from visual_geometry_bench.datagen.utils import (
+    CANONICAL_CORNER_ORDER,
+    corner_order_permutation,
+)
 
 from .render import get_answer_label, register_renderer
 from .styles import COLOURS
-from .topology_common import _DEFAULT_CORNER_ORDER, _text_block
 
-_CANONICAL_LABEL = "Canonical equivalence classes"
-
-
-def _format_configuration_block(
-    base_lines: Sequence[str],
-    tuples: Sequence[tuple[int, int, int, int]] | None,
-    *,
-    section_label: str,
-    include_canonical: bool = True,
-    canonical_label: str = _CANONICAL_LABEL,
-    canonical_mode: str = "summary",
-    errors: Sequence[str] | None = None,
-    empty_message: str | None = None,
-) -> list[str]:
-    lines = list(base_lines)
-
-    if errors:
-        if lines and lines[-1] != "":
-            lines.append("")
-        lines.extend(errors)
-        return lines
-
-    if tuples is None:
-        if empty_message:
-            if lines and lines[-1] != "":
-                lines.append("")
-            lines.append(empty_message)
-        return lines
-
-    configs = [tuple(cfg) for cfg in tuples]
-
-    if lines and lines[-1] != "":
-        lines.append("")
-
-    lines.append(f"{section_label}:")
-    lines.extend(str(cfg) for cfg in configs)
-
-    if include_canonical:
-        lines.append("")
-        lines.append(f"{canonical_label}:")
-
-        if canonical_mode == "per_tuple":
-            for cfg in configs:
-                lines.append(f"{cfg} → {canonicalize(cfg)}")
-        else:
-            seen: list[tuple[int, int, int, int]] = []
-            for cfg in configs:
-                canon = canonicalize(cfg)
-                if canon not in seen:
-                    seen.append(canon)
-            lines.extend(str(cfg) for cfg in seen)
-
-    return lines
+CORNER_COORDS = {
+    "bottom-left": (0.1, 0.1),
+    "bottom-right": (0.9, 0.1),
+    "top-right": (0.9, 0.9),
+    "top-left": (0.1, 0.9),
+}
+CENTER_POINT = (0.5, 0.5)
 
 
 def _parse_topology_answer(answer: Any) -> tuple[list[tuple[int, int, int, int]] | None, list[str]]:
@@ -105,91 +67,213 @@ def _parse_topology_answer(answer: Any) -> tuple[list[tuple[int, int, int, int]]
     return tuples, errors
 
 
-def _prepare_text_axis(ax: plt.Axes, title: str | None, colour: str) -> None:
-    ax.set_axis_off()
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
-    if title:
-        ax.set_title(title, fontsize=13, weight="semibold", pad=10, color=colour)
+def _canonical_tuple(labels: Sequence[int], corner_order: Sequence[str]) -> tuple[int, int, int, int]:
+    perm = corner_order_permutation(corner_order)
+    return tuple(labels[perm[i]] for i in range(4))
 
 
-def _layout_text_axes(fig: plt.Figure, answer_provided: bool) -> tuple[plt.Axes, plt.Axes | None]:
-    if answer_provided:
-        gs = fig.add_gridspec(1, 2, width_ratios=(1.2, 1.0), wspace=0.35)
-        return fig.add_subplot(gs[0, 0]), fig.add_subplot(gs[0, 1])
-    return fig.add_subplot(111), None
+def _segments_two_classes(canonical_labels: Sequence[int]) -> list[list[tuple[float, float]]]:
+    counts = Counter(canonical_labels)
+    if len(counts) != 2:
+        return []
+
+    # Single odd corner: connect odd corner -> center -> midpoint of opposite edge
+    if 3 in counts.values():
+        odd_label = next(label for label, count in counts.items() if count == 1)
+        odd_idx = canonical_labels.index(odd_label)
+        odd_corner = CANONICAL_CORNER_ORDER[odd_idx]
+        odd_point = CORNER_COORDS[odd_corner]
+
+        opposite_edge = {
+            "bottom-left": ((CORNER_COORDS["top-left"][0] + CORNER_COORDS["top-right"][0]) / 2.0, 0.9),
+            "bottom-right": (0.1, (CORNER_COORDS["top-right"][1] + CORNER_COORDS["bottom-right"][1]) / 2.0),
+            "top-right": ((CORNER_COORDS["bottom-left"][0] + CORNER_COORDS["bottom-right"][0]) / 2.0, 0.1),
+            "top-left": (0.9, (CORNER_COORDS["top-left"][1] + CORNER_COORDS["bottom-right"][1]) / 2.0),
+        }[odd_corner]
+        return [[odd_point, CENTER_POINT, opposite_edge]]
+
+    # Adjacent same-class pairs
+    if canonical_labels[0] == canonical_labels[1] and canonical_labels[2] == canonical_labels[3]:
+        return [[(0.5, 0.15), (0.5, 0.85)]]
+    if canonical_labels[0] == canonical_labels[3] and canonical_labels[1] == canonical_labels[2]:
+        return [[(0.15, 0.5), (0.85, 0.5)]]
+
+    # Alternating pattern forces diagonal crossing
+    if canonical_labels[0] == canonical_labels[2] and canonical_labels[1] == canonical_labels[3]:
+        return [[CORNER_COORDS["bottom-left"], CENTER_POINT, CORNER_COORDS["top-right"]]]
+    if canonical_labels[1] == canonical_labels[3] and canonical_labels[0] == canonical_labels[2]:
+        return [[CORNER_COORDS["bottom-right"], CENTER_POINT, CORNER_COORDS["top-left"]]]
+
+    return []
 
 
-def _build_truth_lines(datagen_args: Mapping[str, Any]) -> list[str]:
-    args = dict(datagen_args or {})
-    n_classes = args.get("n_classes")
-    corner_order = tuple(args.get("corner_order", _DEFAULT_CORNER_ORDER))
+def _segments_three_classes(canonical_labels: Sequence[int]) -> list[list[tuple[float, float]]]:
+    anchors: dict[int, list[tuple[float, float]]] = {}
+    for idx, label in enumerate(canonical_labels):
+        corner = CANONICAL_CORNER_ORDER[idx]
+        anchors.setdefault(label, []).append(CORNER_COORDS[corner])
+    segments: list[list[tuple[float, float]]] = []
+    for pts in anchors.values():
+        if not pts:
+            continue
+        target = (
+            sum(p[0] for p in pts) / len(pts),
+            sum(p[1] for p in pts) / len(pts),
+        )
+        lerp = (
+            CENTER_POINT[0] * 0.25 + target[0] * 0.75,
+            CENTER_POINT[1] * 0.25 + target[1] * 0.75,
+        )
+        segments.append([CENTER_POINT, lerp])
+    return segments
 
-    base: list[str] = []
-    errors: list[str] = []
-    tuples: list[tuple[int, int, int, int]] | None = None
-    canonical_only: list[tuple[int, int, int, int]] | None = None
 
-    if n_classes is None:
-        errors.append("Missing datagen_args.n_classes")
-    else:
-        try:
-            n_classes_int = int(n_classes)
-        except (TypeError, ValueError):
-            errors.append(f"Invalid n_classes: {n_classes!r}")
+def _draw_configuration(
+    ax: plt.Axes,
+    labels: Sequence[int],
+    corner_order: Sequence[str],
+    n_classes: int,
+    *,
+    colour: str,
+    linestyle: str,
+    title: str,
+) -> None:
+    ax.set_aspect("equal")
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_facecolor("#FFFFFF")
+    ax.spines[:].set_visible(False)
+
+    ax.plot([0.1, 0.9, 0.9, 0.1, 0.1], [0.1, 0.1, 0.9, 0.9, 0.1], color="#4B5563", linewidth=1.4)
+
+    for corner, label in zip(corner_order, labels, strict=True):
+        x, y = CORNER_COORDS[corner]
+        ax.scatter(
+            x,
+            y,
+            s=230,
+            color=COLOURS["points"],
+            edgecolors="white",
+            linewidths=1.5,
+            zorder=3,
+        )
+        ax.text(x, y, str(label), color="white", weight="bold", fontsize=12, ha="center", va="center", zorder=4)
+
+    canonical = _canonical_tuple(labels, corner_order)
+    segments = (
+        _segments_two_classes(canonical)
+        if n_classes == 2
+        else _segments_three_classes(canonical)
+    )
+    for seg in segments:
+        xs, ys = zip(*seg)
+        ax.plot(
+            xs,
+            ys,
+            color=colour,
+            linewidth=2.6,
+            linestyle=linestyle,
+            solid_capstyle="round",
+        )
+
+    ax.set_title(title, fontsize=9.5, pad=8)
+
+
+def _compute_layout(sections):
+    if not sections:
+        return [], [], 1
+    layouts = []
+    height_units = []
+    for _, items, _, _ in sections:
+        count = len(items)
+        if count == 0:
+            layouts.append((0, 0))
+            height_units.append(1)
+            continue
+        cols = min(3, max(1, math.ceil(math.sqrt(count))))
+        rows = math.ceil(count / cols)
+        layouts.append((rows, cols))
+        height_units.append(rows or 1)
+    total_rows = sum(height_units) or 1
+    return layouts, height_units, total_rows
+
+
+def _render_sections(
+    fig: plt.Figure,
+    sections: list[tuple[str, list[tuple[int, int, int, int]], str, str]],
+    corner_order: Sequence[str],
+    n_classes: int,
+    *,
+    layouts: Sequence[tuple[int, int]],
+    height_units: Sequence[int],
+) -> None:
+    if not sections:
+        return
+
+    gs_outer = fig.add_gridspec(len(sections), 1, height_ratios=height_units, hspace=0.6)
+
+    for idx, ((label, items, colour, linestyle), (rows, cols)) in enumerate(zip(sections, layouts, strict=True)):
+        if not items:
+            continue
+        sub = gs_outer[idx].subgridspec(rows, cols, hspace=0.35, wspace=0.35)
+        first_ax = None
+        for case_idx, labels in enumerate(items):
+            row = case_idx // cols
+            col = case_idx % cols
+            ax = fig.add_subplot(sub[row, col])
+            if first_ax is None:
+                first_ax = ax
+            _draw_configuration(
+                ax,
+                labels,
+                corner_order,
+                n_classes,
+                colour=colour,
+                linestyle=linestyle,
+                title=str(tuple(labels)),
+            )
+        total_slots = rows * cols
+        for blank_idx in range(len(items), total_slots):
+            row = blank_idx // cols
+            col = blank_idx % cols
+            fig.add_subplot(sub[row, col]).axis("off")
+        if first_ax:
+            bbox = first_ax.get_position(fig)
+            fig.text(
+                bbox.x0,
+                bbox.y1 + 0.015,
+                f"{label} (cases={len(items)})",
+                color=colour,
+                weight="semibold",
+                fontsize=12,
+                ha="left",
+                va="bottom",
+            )
+
+
+def _split_solution_classes(tuples: list[tuple[int, int, int, int]]) -> tuple[list[tuple[int, int, int, int]], list[tuple[int, int, int, int]]]:
+    odd_cases = []
+    other_cases = []
+    for tup in tuples:
+        counts = Counter(tup)
+        if 3 in counts.values():
+            odd_cases.append(tup)
         else:
-            try:
-                solutions = get_solutions(n_classes_int, corner_order)
-            except (AssertionError, ValueError) as exc:
-                errors.append("Unable to compute ground truth")
-                errors.append(str(exc))
-            else:
-                base.extend(
-                    [
-                        f"n_classes={n_classes_int}",
-                        f"corner_order={corner_order}",
-                        f"Ground-truth tuples: {len(solutions)}",
-                    ]
-                )
-                tuples = [tuple(cfg) for cfg in solutions]
-                seen: list[tuple[int, int, int, int]] = []
-                for cfg in tuples:
-                    canon = canonicalize(cfg)
-                    if canon not in seen:
-                        seen.append(canon)
-                canonical_only = seen
-
-    lines = _format_configuration_block(
-        base,
-        canonical_only,
-        section_label="Solutions",
-        include_canonical=False,
-        errors=errors if errors else None,
-        empty_message="No ground-truth configurations available.",
-    )
-    if lines and lines[0] != "":
-        lines.insert(0, "")
-    return lines
+            other_cases.append(tup)
+    return odd_cases, other_cases
 
 
-def _build_answer_lines(answer: Any, section_label: str) -> list[str]:
-    parsed, errors = _parse_topology_answer(answer)
-    base: list[str] = []
-    if parsed is not None:
-        base.append(f"Tuples provided: {len(parsed)}")
-
-    lines = _format_configuration_block(
-        base,
-        parsed,
-        section_label=section_label,
-        include_canonical=True,
-        canonical_label=_CANONICAL_LABEL,
-        errors=errors if errors else None,
-        empty_message="No valid tuples parsed from model answer.",
-    )
-    if lines and lines[0] != "":
-        lines.insert(0, "")
-    return lines
+def _build_sections(gt_tuples, answer_tuples, record):
+    sections: list[tuple[str, list[tuple[int, int, int, int]], str, str]] = []
+    if gt_tuples:
+        odd, others = _split_solution_classes(gt_tuples)
+        if odd:
+            sections.append(("Ground truth – odd corner", odd, COLOURS["truth"], "-"))
+        if others:
+            sections.append(("Ground truth – alternation/pairs", others, COLOURS["truth"], "-"))
+    if answer_tuples:
+        sections.append((get_answer_label(record, default="Model answers"), answer_tuples, COLOURS["answer"], "--"))
+    return [s for s in sections if s[1]]
 
 
 def _render_topology_enumeration(
@@ -199,32 +283,42 @@ def _render_topology_enumeration(
     *,
     show: bool | None = None,
 ) -> plt.Figure:
-    fig = plt.figure(figsize=(12, 6))
+    datagen_args = record.get("datagen_args", {})
+    corner_order = tuple(datagen_args.get("corner_order", CANONICAL_CORNER_ORDER))
+    n_classes = int(datagen_args.get("n_classes", 2))
+
+    gt_tuples = [tuple(int(x) for x in cfg) for cfg in record.get("ground_truth", [])]
+    parsed_answers, _ = _parse_topology_answer(answer) if answer is not None else (None, [])
+    answer_tuples = parsed_answers or []
+
+    sections = _build_sections(gt_tuples, answer_tuples, record)
+    if not sections:
+        sections = [("Ground truth", gt_tuples or [], COLOURS["truth"], "-")]
+
+    layouts, height_units, total_rows = _compute_layout(sections)
+    fig_height = 2.5 * total_rows + 1.5
+    max_cases = max((len(items) for _, items, _, _ in sections), default=1)
+    fig_width = max(6.5, 3.2 * min(3, max_cases))
+    fig = plt.figure(figsize=(fig_width, fig_height))
     fig.suptitle("Topology Enumeration", fontsize=15, weight="bold")
     fig.patch.set_facecolor("white")
 
-    _ = show
-
-    answer_provided = answer is not None
-    ax_truth, ax_answer = _layout_text_axes(fig, answer_provided)
-
-    _prepare_text_axis(ax_truth, None, COLOURS["truth"])
-    if ax_answer is not None:
-        model_label = get_answer_label(record, default="Model answers")
-        _prepare_text_axis(ax_answer, model_label, COLOURS["answer"])
+    if sections and layouts:
+        _render_sections(fig, sections, corner_order, n_classes, layouts=layouts, height_units=height_units)
     else:
-        model_label = None
+        ax = fig.add_subplot(111)
+        ax.axis("off")
+        ax.text(0.5, 0.5, "No configurations available.", ha="center", va="center", color=COLOURS["failure_text"])
 
-    truth_lines = _build_truth_lines(record.get("datagen_args", {}))
-
-    _text_block(ax_truth, truth_lines, color=COLOURS["truth"])
-
-    if not answer_provided or ax_answer is None:
-        return fig
-
-    answer_lines = _build_answer_lines(answer, model_label or "Model answers")
-
-    _text_block(ax_answer, answer_lines, color=COLOURS["answer"])
+    fig.text(
+        0.5,
+        0.04,
+        f"Corner order (prompt): {corner_order} • n_classes={n_classes}",
+        ha="center",
+        va="center",
+        fontsize=10,
+        color=COLOURS["annotation"],
+    )
 
     return fig
 
