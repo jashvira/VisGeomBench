@@ -499,12 +499,13 @@ def _render_half_subdivision(
 
     # Left column: textual info
     ax_gt = fig.add_subplot(gs[0, 0])
+    gt_text_colour = COLOURS["correct_neighbour"] if has_answer else COLOURS["truth"]
     _render_text_block(
         ax_gt,
         title="Ground truth",
         lines=_format_label_lines(highlight_labels_text),
         empty_message="(none)",
-        colour=COLOURS["truth"],
+        colour=gt_text_colour,
     )
 
     if show_model_answer:
