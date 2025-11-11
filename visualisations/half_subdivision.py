@@ -121,7 +121,7 @@ def _draw_leaves(
             linewidth = 2.8
             zorder = 3
         elif label_key in correct_set:
-            edgecolor = COLOURS["answer"]
+            edgecolor = COLOURS["correct_neighbour"]
             linewidth = 2.4
             zorder = 2.7
         elif label_key in missed_set:
@@ -218,8 +218,8 @@ def _draw_voxels(
             edgecolor = COLOURS["reference"]
             alpha = 0.45
         elif label_key in correct_set:
-            facecolor = COLOURS["answer"]
-            edgecolor = COLOURS["answer"]
+            facecolor = COLOURS["correct_neighbour"]
+            edgecolor = COLOURS["correct_neighbour"]
             alpha = 0.4
         elif label_key in missed_set:
             facecolor = COLOURS["missed_vertex"]
@@ -334,7 +334,7 @@ def _add_highlight_legend(
         handles.append(
             Patch(
                 facecolor="white",
-                edgecolor=COLOURS["answer"],
+                edgecolor=COLOURS["correct_neighbour"],
                 linewidth=2.2,
                 label="Correct neighbour",
             )

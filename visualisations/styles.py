@@ -13,6 +13,7 @@ COLOURS: dict[str, str] = {
     "answer": "#1565c0",
     "partial": "#f57c00",
     "reference": "#1565c0",
+    "correct_neighbour": "#00897B",
     "annotation": "#37474f",
     "success_panel": "#E8F5E9",
     "success_text": "#1B5E20",
