@@ -107,11 +107,11 @@ Which corner labellings of a square force distinct regions to meet inside? Conti
     <figcaption><strong>Question</strong></figcaption>
   </figure>
   <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
-    <div style="width:100%;border:1px dashed #d1d5db;margin:0 0 8px;padding:28px 16px;font-style:italic;color:#6b7280;text-align:center;">Pending render</div>
+    <img src="blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/topology_enumeration_curated/model_answers/question_001.png" alt="Gemini answer" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
     <figcaption>Gemini 2.5 Pro</figcaption>
   </figure>
   <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
-    <div style="width:100%;border:1px dashed #d1d5db;margin:0 0 8px;padding:28px 16px;font-style:italic;color:#6b7280;text-align:center;">Pending render</div>
+    <img src="blog_prep/visual_geometry_bench.evaluation--gpt-5-2025-08-07/topology_enumeration_curated/model_answers/question_001.png" alt="GPT-5 answer" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
     <figcaption>GPT‑5 (2025‑08‑07)</figcaption>
   </figure>
 </div>
