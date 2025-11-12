@@ -26,7 +26,12 @@ from visual_geometry_bench.datagen.utils import (
     permute_config,
 )
 
-from .render import get_answer_label, register_renderer
+from .render import (
+    get_answer_label,
+    register_renderer,
+    should_render_answers,
+    should_render_truth,
+)
 from .styles import COLOURS
 from .topology_common import (
     _DEFAULT_CORNER_ORDER,
@@ -165,6 +170,10 @@ def _render_topology_edge(
     edge_order_display = list(edge_order_tuple)
     subtask = datagen_args.get("subtask", "enumerate_edges")
     model_label = get_answer_label(record, default="Model answers")
+    render_truth = should_render_truth(record)
+    render_answers = should_render_answers(record)
+    if not render_truth and not render_answers:
+        render_truth = True
 
     resolved_cases = _resolved_cases_from_args(datagen_args, corner_order_tuple)
     cases: list[tuple[int, int, int, int]] = list(resolved_cases or [])
@@ -247,6 +256,7 @@ def _render_topology_edge(
     legend_entries: dict[str, Any] = {}
 
     behaviours_gt: list[str | None] = [None] * num_cases
+    answer_labels: list[str | None] = [None] * num_cases
     if is_classify:
         for idx in range(num_cases):
             label = None
@@ -255,6 +265,18 @@ def _render_topology_edge(
             if label is None and idx < len(cases):
                 label = _behaviour_for_config(cases[idx], corner_order_tuple)
             behaviours_gt[idx] = label
+
+            ans_raw = parsed_answer[idx]
+            coerced = None
+            if isinstance(ans_raw, str):
+                coerced = ans_raw.strip() or None
+            elif isinstance(ans_raw, (list, tuple)) and ans_raw:
+                head = ans_raw[0]
+                if isinstance(head, str):
+                    coerced = head.strip() or None
+            elif ans_raw not in (None, ""):
+                coerced = str(ans_raw).strip() or None
+            answer_labels[idx] = coerced
 
     for idx in range(num_cases):
         ax = axes[idx]
@@ -292,20 +314,21 @@ def _render_topology_edge(
             title_text,
         )
 
-        _draw_edge_connections(
-            ax,
-            gt_connections,
-            COLOURS["truth"],
-            "Ground truth",
-            edge_centers,
-            offset=1.0,
-            line_kwargs={"solid_capstyle": "round"},
-        )
+        if render_truth:
+            _draw_edge_connections(
+                ax,
+                gt_connections,
+                COLOURS["truth"],
+                "Ground truth",
+                edge_centers,
+                offset=1.0,
+                line_kwargs={"solid_capstyle": "round"},
+            )
 
-        if triple_spokes:
-            _draw_triple_spokes(ax, edge_centers, triple_spokes, COLOURS["truth"])
+            if triple_spokes:
+                _draw_triple_spokes(ax, edge_centers, triple_spokes, COLOURS["truth"])
 
-        if not is_classify:  # Classify tasks deliberately omit model overlays
+        if render_answers and not is_classify:
             _draw_edge_connections(
                 ax,
                 ans_connections,
@@ -318,6 +341,19 @@ def _render_topology_edge(
                     "dash_capstyle": "round",
                     "dash_joinstyle": "round",
                 },
+            )
+
+        if is_classify and render_answers:
+            ans_label = answer_labels[idx] or "(no answer)"
+            ax.text(
+                0.5,
+                -0.12,
+                f"Model: {ans_label}",
+                transform=ax.transAxes,
+                ha="center",
+                va="top",
+                fontsize=10,
+                color=COLOURS["answer"],
             )
 
         handles, labels = ax.get_legend_handles_labels()

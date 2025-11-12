@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import math
 from collections import Counter
 from typing import Any, Mapping, Sequence
@@ -13,7 +14,12 @@ from visual_geometry_bench.datagen.utils import (
     corner_order_permutation,
 )
 
-from .render import register_renderer
+from .render import (
+    get_answer_label,
+    register_renderer,
+    should_render_answers,
+    should_render_truth,
+)
 from .styles import COLOURS
 from .topology_common import (
     _DEFAULT_CORNER_ORDER,
@@ -28,6 +34,37 @@ EDGE_MIDPOINTS = [
     (0.5, 1.0),  # top
     (0.0, 0.5),  # left
 ]
+
+
+def _parse_topology_answer(answer: Any) -> tuple[list[tuple[int, int, int, int]] | None, list[str]]:
+    errors: list[str] = []
+
+    if isinstance(answer, str):
+        try:
+            raw = ast.literal_eval(answer)
+        except (ValueError, SyntaxError):
+            errors.append("Could not parse answer string as Python literal.")
+            return None, errors
+    elif isinstance(answer, Sequence) and not isinstance(answer, (str, bytes)):
+        raw = list(answer)
+    else:
+        errors.append(f"Unsupported answer type: {type(answer).__name__}")
+        return None, errors
+
+    tuples: list[tuple[int, int, int, int]] = []
+    for idx, item in enumerate(raw):
+        if not isinstance(item, (list, tuple)):
+            errors.append(f"Entry {idx} is not a tuple/list: {item!r}")
+            return None, errors
+        if len(item) != 4:
+            errors.append(f"Entry {idx} has length {len(item)} (expected 4).")
+            return None, errors
+        try:
+            tuples.append(tuple(int(val) for val in item))
+        except (TypeError, ValueError):
+            errors.append(f"Entry {idx} contains non-integer values: {item!r}")
+            return None, errors
+    return tuples, errors
 
 
 def _canonical_tuple(labels: Sequence[int], corner_order: Sequence[str]) -> tuple[int, int, int, int]:
@@ -183,10 +220,16 @@ def _render_sections(
             )
 
 
-def _build_sections(gt_tuples):
+def _build_sections(
+    record: Mapping[str, Any],
+    gt_tuples: list[tuple[int, int, int, int]],
+    answer_tuples: list[tuple[int, int, int, int]],
+):
     sections: list[tuple[str, list[tuple[int, int, int, int]], str, str]] = []
-    if gt_tuples:
+    if should_render_truth(record) and gt_tuples:
         sections.append(("Ground truth", gt_tuples, COLOURS["truth"], "-"))
+    if should_render_answers(record) and answer_tuples:
+        sections.append((get_answer_label(record, default="Model answers"), answer_tuples, COLOURS["answer"], "--"))
     return [s for s in sections if s[1]]
 
 
@@ -202,9 +245,18 @@ def _render_topology_enumeration(
     n_classes = int(datagen_args.get("n_classes", 2))
 
     gt_tuples = [tuple(int(x) for x in cfg) for cfg in record.get("ground_truth", [])]
-    sections = _build_sections(gt_tuples)
+    answer_tuples: list[tuple[int, int, int, int]] = []
+    if should_render_answers(record):
+        parsed_answers, _ = _parse_topology_answer(answer)
+        if parsed_answers:
+            answer_tuples = parsed_answers
+
+    sections = _build_sections(record, gt_tuples, answer_tuples)
     if not sections:
-        sections = [("Ground truth", gt_tuples or [], COLOURS["truth"], "-")]
+        fallback_label = "Ground truth" if should_render_truth(record) else get_answer_label(record, default="Model answers")
+        fallback_colour = COLOURS["truth"] if should_render_truth(record) else COLOURS["answer"]
+        fallback_cases = gt_tuples if should_render_truth(record) else answer_tuples
+        sections = [(fallback_label, fallback_cases or [], fallback_colour, "-")]
 
     layouts, height_units, total_rows = _compute_layout(sections)
     fig_height = 2.5 * total_rows + 1.5

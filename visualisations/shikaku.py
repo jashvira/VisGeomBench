@@ -12,7 +12,12 @@ from matplotlib import colors as mcolors
 
 from visual_geometry_bench.datagen.shikaku_tasks import load_puzzle
 
-from .render import get_answer_label, register_renderer
+from .render import (
+    get_answer_label,
+    register_renderer,
+    should_render_answers,
+    should_render_truth,
+)
 from .styles import COLOURS
 
 
@@ -146,12 +151,23 @@ def _render_shikaku(
         numbers = np.array(puzzle["numbers"], dtype=int)
     ground_truth = record.get("ground_truth", [])
 
-    fig, axes = plt.subplots(1, 2, figsize=(12, 6), constrained_layout=True)
+    panels: list[tuple[str, str]] = []
+    if should_render_truth(record):
+        panels.append(("truth", "Ground truth"))
+    if should_render_answers(record):
+        panels.append(("answer", get_answer_label(record)))
+    if not panels:
+        panels.append(("truth", "Ground truth"))
+
+    fig, axes = plt.subplots(1, len(panels), figsize=(6 * len(panels), 6), constrained_layout=True)
+    if not isinstance(axes, np.ndarray):
+        axes = np.array([axes])
+    axes = axes.flatten()
     fig.suptitle("Shikaku Rectangles", fontsize=15, weight="bold")
     fig.patch.set_facecolor("white")
 
-    answer_title = get_answer_label(record)
-    for ax, title in zip(axes, ("Ground truth", answer_title), strict=True):
+    panel_axes: dict[str, plt.Axes] = {}
+    for ax, (role, title) in zip(axes, panels, strict=True):
         ax.set_title(title, fontsize=13, weight="semibold", pad=10)
         ax.set_aspect("equal")
         ax.set_xlim(-0.05, width + 0.05)
@@ -159,27 +175,30 @@ def _render_shikaku(
         ax.invert_yaxis()
         ax.grid(False)
         ax.set_facecolor("#FAFAFA")
+        panel_axes[role] = ax
 
-    # Ground truth: rectangles first, then overlay grid for crisp separators
-    if ground_truth:
-        _draw_rectangles(axes[0], ground_truth, color=COLOURS["truth"], zorder=5)
-    _draw_grid(axes[0], width, height, numbers)
+    ax_truth = panel_axes.get("truth")
+    if ax_truth:
+        if ground_truth:
+            _draw_rectangles(ax_truth, ground_truth, color=COLOURS["truth"], zorder=5)
+        _draw_grid(ax_truth, width, height, numbers)
 
-    # Answer: grid + model rectangles
-    parsed_answer = _coerce_rectangles(answer)
-    if parsed_answer is None:
-        axes[1].text(
-            width / 2,
-            height / 2,
-            "Invalid answer",
-            ha="center",
-            va="center",
-            fontsize=11,
-            color=COLOURS["answer"],
-        )
-    else:
-        _draw_rectangles(axes[1], parsed_answer, color=COLOURS["answer"], zorder=5)
-    _draw_grid(axes[1], width, height, numbers)
+    ax_answer = panel_axes.get("answer")
+    if ax_answer:
+        parsed_answer = _coerce_rectangles(answer)
+        if parsed_answer is None:
+            ax_answer.text(
+                width / 2,
+                height / 2,
+                "Invalid answer",
+                ha="center",
+                va="center",
+                fontsize=11,
+                color=COLOURS["answer"],
+            )
+        else:
+            _draw_rectangles(ax_answer, parsed_answer, color=COLOURS["answer"], zorder=5)
+        _draw_grid(ax_answer, width, height, numbers)
 
     return fig
 

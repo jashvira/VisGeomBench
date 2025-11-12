@@ -13,7 +13,12 @@ from matplotlib.lines import Line2D
 from visual_geometry_bench.datagen.convex_hull_tasks import _to_points as _convex_to_points
 from visual_geometry_bench.datagen.delaunay_tasks import _to_points as _delaunay_to_points
 
-from .render import get_answer_label, register_renderer
+from .render import (
+    get_answer_label,
+    register_renderer,
+    should_render_answers,
+    should_render_truth,
+)
 from .styles import COLOURS
 
 _FRIENDLY_TITLES = {
@@ -34,19 +39,33 @@ def _format_problem_title(record: Mapping[str, Any]) -> str:
     return raw.replace("_", " ").title()
 
 
-def _make_two_panel(record: Mapping[str, Any]) -> tuple[plt.Figure, list[plt.Axes]]:
-    fig, axes = plt.subplots(1, 2, figsize=(11.0, 5.5))
-    fig.subplots_adjust(left=0.03, right=0.97, bottom=0.16, wspace=-0.25)
+def _make_panels(record: Mapping[str, Any]) -> tuple[plt.Figure, dict[str, plt.Axes]]:
+    panels: list[tuple[str, str]] = []
+    if should_render_truth(record):
+        panels.append(("truth", "Ground truth"))
+    if should_render_answers(record):
+        panels.append(("answer", get_answer_label(record)))
+    if not panels:
+        panels.append(("truth", "Ground truth"))
+
+    fig_width = 5.5 * len(panels)
+    fig, axes = plt.subplots(1, len(panels), figsize=(fig_width, 5.5))
+    if not isinstance(axes, np.ndarray):
+        axes = np.array([axes])
+    axes = axes.flatten()
+    fig.subplots_adjust(left=0.05, right=0.97, bottom=0.16, wspace=0.25)
     fig.suptitle(_format_problem_title(record), fontsize=15, weight="bold")
-    titles = ("Ground truth", get_answer_label(record))
-    for ax, title in zip(axes, titles, strict=True):
+
+    panel_axes: dict[str, plt.Axes] = {}
+    for ax, (key, title) in zip(axes, panels, strict=True):
         ax.set_title(title, fontsize=13, weight="semibold", pad=10)
         ax.set_aspect("equal")
         ax.set_xlim(*DEFAULT_VIEW_LIMITS)
         ax.set_ylim(*DEFAULT_VIEW_LIMITS)
         ax.grid(True, linestyle="--", linewidth=0.3, alpha=0.3, color="#CCCCCC")
         ax.set_facecolor("#FAFAFA")
-    return fig, list(axes)
+        panel_axes[key] = ax
+    return fig, panel_axes
 
 
 def _scatter_with_labels(
@@ -200,9 +219,13 @@ def _render_convex_hull(
     is_circle = point_distribution == "circle"
     circle_params = _infer_circle_params(points) if is_circle else None
 
-    fig, (ax_gt, ax_ans) = _make_two_panel(record)
-    if circle_params:
-        for ax in (ax_gt, ax_ans):
+    fig, panels = _make_panels(record)
+    ax_gt = panels.get("truth")
+    ax_ans = panels.get("answer")
+
+    circle_axes = list(panels.values())
+    if circle_params and circle_axes:
+        for ax in circle_axes:
             _apply_circle_axes(ax, *circle_params)
             _draw_circle_outline(
                 ax,
@@ -213,84 +236,85 @@ def _render_convex_hull(
             )
 
     label_circle = circle_params if is_circle else None
-    _scatter_with_labels(ax_gt, points, circle_label_params=label_circle)
 
     hull_indices = list(map(int, ground_truth))
     legend_entries: dict[str, Any] = {}
-    if hull_indices:
-        gt_line = _draw_polyline(ax_gt, points, hull_indices, color=COLOURS["truth"], closed=True)
-        if gt_line:
-            legend_entries["Ground truth hull"] = gt_line
-        coords = points[hull_indices]
-        gt_scatter = ax_gt.scatter(
-            coords[:, 0],
-            coords[:, 1],
-            color=COLOURS["truth"],
-            s=100,
-            edgecolors="white",
-            linewidths=2,
-            zorder=4,
-        )
-        legend_entries.setdefault("Ground truth hull", gt_scatter)
-
-    parsed_answer = _coerce_index_list(answer)
-    if parsed_answer is None:
-        _scatter_with_labels(ax_ans, points, circle_label_params=label_circle)
-        _draw_invalid_message(ax_ans, "Invalid answer")
-    else:
-        answer_points: list[int] = []
-        for idx in parsed_answer:
-            if 0 <= idx < len(points):
-                answer_points.append(idx)
-
-        truth_set = set(hull_indices)
-        ans_set = set(answer_points)
-        missed = sorted(truth_set - ans_set)
-        extra = sorted(ans_set - truth_set)
-        correct = sorted(ans_set & truth_set)
-
-        label_overrides: dict[int, str] = {}
-        for idx in missed:
-            label_overrides[idx] = COLOURS["missed_vertex"]
-        for idx in extra:
-            label_overrides[idx] = COLOURS["extra_vertex"]
-
-        _scatter_with_labels(ax_ans, points, label_colours=label_overrides, circle_label_params=label_circle)
-
-        draw_indices = answer_points if len(answer_points) >= 2 else []
-        if draw_indices:
-            _draw_polyline(ax_ans, points, draw_indices, color=COLOURS["answer"], closed=True)
-        answer_label = get_answer_label(record)
-
-        def _scatter_subset(indices: list[int], *, color: str, label: str) -> None:
-            if not indices:
-                return
-            coords = points[indices]
-            handle = ax_ans.scatter(
+    if ax_gt:
+        _scatter_with_labels(ax_gt, points, circle_label_params=label_circle)
+        if hull_indices:
+            gt_line = _draw_polyline(ax_gt, points, hull_indices, color=COLOURS["truth"], closed=True)
+            if gt_line:
+                legend_entries["Ground truth hull"] = gt_line
+            coords = points[hull_indices]
+            gt_scatter = ax_gt.scatter(
                 coords[:, 0],
                 coords[:, 1],
-                color=color,
-                s=115,
+                color=COLOURS["truth"],
+                s=100,
                 edgecolors="white",
-                linewidths=2.2,
-                zorder=5,
+                linewidths=2,
+                zorder=4,
             )
-            legend_entries[label] = handle
+            legend_entries.setdefault("Ground truth hull", gt_scatter)
 
-        if correct:
-            _scatter_subset(correct, color=COLOURS["answer"], label=answer_label)
-        elif draw_indices:
-            legend_entries.setdefault(
-                answer_label,
-                Line2D([], [], color=COLOURS["answer"], linewidth=2),
-            )
-        if missed:
-            _scatter_subset(missed, color=COLOURS["missed_vertex"], label="Missed hull vertex")
-        if extra:
-            _scatter_subset(extra, color=COLOURS["extra_vertex"], label="Extra vertex")
+    if ax_ans:
+        parsed_answer = _coerce_index_list(answer)
+        if parsed_answer is None:
+            _scatter_with_labels(ax_ans, points, circle_label_params=label_circle)
+            _draw_invalid_message(ax_ans, "Invalid answer")
+        else:
+            answer_points: list[int] = []
+            for idx in parsed_answer:
+                if 0 <= idx < len(points):
+                    answer_points.append(idx)
+
+            truth_set = set(hull_indices)
+            ans_set = set(answer_points)
+            missed = sorted(truth_set - ans_set)
+            extra = sorted(ans_set - truth_set)
+            correct = sorted(ans_set & truth_set)
+
+            label_overrides: dict[int, str] = {}
+            for idx in missed:
+                label_overrides[idx] = COLOURS["missed_vertex"]
+            for idx in extra:
+                label_overrides[idx] = COLOURS["extra_vertex"]
+
+            _scatter_with_labels(ax_ans, points, label_colours=label_overrides, circle_label_params=label_circle)
+
+            draw_indices = answer_points if len(answer_points) >= 2 else []
+            if draw_indices:
+                _draw_polyline(ax_ans, points, draw_indices, color=COLOURS["answer"], closed=True)
+            answer_label = get_answer_label(record)
+
+            def _scatter_subset(indices: list[int], *, color: str, label: str) -> None:
+                if not indices:
+                    return
+                coords = points[indices]
+                handle = ax_ans.scatter(
+                    coords[:, 0],
+                    coords[:, 1],
+                    color=color,
+                    s=115,
+                    edgecolors="white",
+                    linewidths=2.2,
+                    zorder=5,
+                )
+                legend_entries[label] = handle
+
+            if correct:
+                _scatter_subset(correct, color=COLOURS["answer"], label=answer_label)
+            elif draw_indices:
+                legend_entries.setdefault(
+                    answer_label,
+                    Line2D([], [], color=COLOURS["answer"], linewidth=2),
+                )
+            if missed:
+                _scatter_subset(missed, color=COLOURS["missed_vertex"], label="Missed hull vertex")
+            if extra:
+                _scatter_subset(extra, color=COLOURS["extra_vertex"], label="Extra vertex")
 
     if legend_entries:
-        assert ax_ans.figure is fig
         fig.subplots_adjust(top=0.7)
         fig.legend(
             legend_entries.values(),
@@ -315,20 +339,22 @@ def _render_delaunay(
     points = np.array(_delaunay_to_points(record["datagen_args"]), dtype=float)
     ground_truth = record.get("ground_truth") or []
 
-    fig, (ax_gt, ax_ans) = _make_two_panel(record)
+    fig, panels = _make_panels(record)
+    ax_gt = panels.get("truth")
+    ax_ans = panels.get("answer")
 
-    _scatter_with_labels(ax_gt, points)
+    if ax_gt:
+        _scatter_with_labels(ax_gt, points)
+        if ground_truth:
+            _draw_triangles(ax_gt, points, ground_truth, color=COLOURS["truth"])
 
-    if ground_truth:
-        _draw_triangles(ax_gt, points, ground_truth, color=COLOURS["truth"])
-
-    _scatter_with_labels(ax_ans, points)
-
-    parsed_answer = _coerce_triangle_list(answer)
-    if parsed_answer is None:
-        _draw_invalid_message(ax_ans, "Invalid answer")
-    else:
-        _draw_triangles(ax_ans, points, parsed_answer, color=COLOURS["answer"])
+    if ax_ans:
+        _scatter_with_labels(ax_ans, points)
+        parsed_answer = _coerce_triangle_list(answer)
+        if parsed_answer is None:
+            _draw_invalid_message(ax_ans, "Invalid answer")
+        else:
+            _draw_triangles(ax_ans, points, parsed_answer, color=COLOURS["answer"])
 
     return fig
 

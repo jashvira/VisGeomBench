@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, Mapping
 
@@ -14,6 +15,29 @@ Renderer = Callable[[dict[str, Any], Any, bool], RendererResult]
 
 _RENDERERS: dict[str, Renderer] = {}
 _STYLE_APPLIED = False
+
+
+class RenderMode(str, Enum):
+    """Enumerates how a renderer should depict truth vs. answers."""
+
+    GROUND_TRUTH = "ground_truth"
+    MODEL_ANSWER = "model_answer"
+    BOTH = "both"
+
+    @classmethod
+    def from_value(cls, value: "RenderMode | str | None") -> "RenderMode":
+        if isinstance(value, cls):
+            return value
+        if value is None:
+            return cls.BOTH
+        if isinstance(value, str):
+            value_norm = value.strip().lower()
+            for member in cls:
+                if member.value == value_norm:
+                    return member
+        raise ValueError(
+            f"Unsupported render mode {value!r}; expected one of {[m.value for m in cls]}"
+        )
 
 
 def register_renderer(problem_type: str, renderer: Renderer, *, overwrite: bool = False) -> None:
@@ -35,6 +59,7 @@ def visualise_record(
     metadata_caption: str | None = None,
     answer_label: str | None = None,
     show: bool | None = None,
+    mode: RenderMode | str | None = None,
 ) -> RendererResult:
     """Render a dataset record (and optional model answer) into figure(s)."""
 
@@ -49,13 +74,18 @@ def visualise_record(
     _ensure_matplotlib_style()
 
     payload: Mapping[str, Any]
-    if answer_label:
+    render_mode = RenderMode.from_value(mode)
+
+    payload = record
+    needs_meta = (render_mode is not RenderMode.BOTH) or bool(answer_label)
+    if needs_meta:
         payload = dict(record)
         render_meta = dict(payload.get("_render_meta", {}))
-        render_meta["answer_label"] = answer_label
+        if answer_label:
+            render_meta["answer_label"] = answer_label
+        if render_mode is not RenderMode.BOTH:
+            render_meta["render_mode"] = render_mode.value
         payload["_render_meta"] = render_meta
-    else:
-        payload = record
 
     result = renderer(payload, answer, detail, show=show)
 
@@ -119,6 +149,26 @@ def get_answer_label(record: Mapping[str, Any], default: str = "Answer") -> str:
         if isinstance(label, str) and label.strip():
             return label
     return default
+
+
+def get_render_mode(record: Mapping[str, Any]) -> RenderMode:
+    meta = record.get("_render_meta") if isinstance(record, Mapping) else None
+    if isinstance(meta, Mapping):
+        raw = meta.get("render_mode")
+        if isinstance(raw, str):
+            try:
+                return RenderMode.from_value(raw)
+            except ValueError:
+                return RenderMode.BOTH
+    return RenderMode.BOTH
+
+
+def should_render_truth(record: Mapping[str, Any]) -> bool:
+    return get_render_mode(record) in {RenderMode.BOTH, RenderMode.GROUND_TRUTH}
+
+
+def should_render_answers(record: Mapping[str, Any]) -> bool:
+    return get_render_mode(record) in {RenderMode.BOTH, RenderMode.MODEL_ANSWER}
 
 
 def _ensure_matplotlib_style() -> None:

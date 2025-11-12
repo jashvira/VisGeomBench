@@ -21,7 +21,12 @@ from visual_geometry_bench.datagen.half_subdivision_neighbours import (
     _prepare_case,
 )
 
-from .render import get_answer_label, register_renderer
+from .render import (
+    get_answer_label,
+    register_renderer,
+    should_render_answers,
+    should_render_truth,
+)
 from .styles import COLOURS
 
 
@@ -448,6 +453,10 @@ def _render_half_subdivision(
     datagen_args = record.get("datagen_args", {})
     leaves, dim, axis_cycle, default_target, default_ground = _generate_case(datagen_args)
     model_label = get_answer_label(record, default="Model answer")
+    render_truth = should_render_truth(record)
+    render_answers = should_render_answers(record)
+    if not render_truth and not render_answers:
+        render_truth = True
 
     target_label_raw = datagen_args.get("target_leaf")
     target_label = target_label_raw if isinstance(target_label_raw, str) else None
@@ -479,44 +488,49 @@ def _render_half_subdivision(
     model_answer_labels: list[str] = parsed_answer if isinstance(parsed_answer, list) else []
     has_answer = bool(model_answer_labels)
 
-    highlight_labels_text: list[str] = list(ground_truth_labels)
-    highlight_labels_draw: list[str] = [] if has_answer else list(ground_truth_labels)
+    highlight_labels_text: list[str] = list(ground_truth_labels) if render_truth else []
+    truth_overlay_allowed = render_truth and not (render_answers and has_answer)
+    highlight_labels_draw: list[str] = list(ground_truth_labels) if truth_overlay_allowed else []
 
     gt_set = {label for label in ground_truth_labels if isinstance(label, str)}
     answer_set = {label for label in model_answer_labels if isinstance(label, str)}
-    correct_labels = sorted(gt_set & answer_set) if has_answer else []
-    missed_labels = sorted(gt_set - answer_set) if has_answer else []
-    extra_labels = sorted(answer_set - gt_set) if has_answer else []
-    has_errors = bool(missed_labels or extra_labels)
-    show_model_answer = detail and has_answer
+    if render_answers and has_answer:
+        correct_labels = sorted(gt_set & answer_set)
+        missed_labels = sorted(gt_set - answer_set)
+        extra_labels = sorted(answer_set - gt_set)
+    else:
+        correct_labels = []
+        missed_labels = []
+        extra_labels = []
+    show_model_answer = detail and has_answer and render_answers
 
-    model_labels_for_render = model_answer_labels if has_answer else []
-    correct_for_render = correct_labels if has_answer else []
-    missed_for_render = missed_labels if has_answer else []
-    extra_for_render = extra_labels if has_answer else []
-    text_rows = 2 if show_model_answer else 1
+    model_labels_for_render = model_answer_labels if (render_answers and has_answer) else []
+    correct_for_render = correct_labels if model_labels_for_render else []
+    missed_for_render = missed_labels if model_labels_for_render else []
+    extra_for_render = extra_labels if model_labels_for_render else []
+
+    text_panels: list[tuple[str, list[str], str]] = []
+    if render_truth:
+        gt_text_colour = COLOURS["correct_neighbour"] if model_labels_for_render else COLOURS["truth"]
+        text_panels.append(("Ground truth", _format_label_lines(highlight_labels_text), gt_text_colour))
+    if show_model_answer:
+        text_panels.append((model_label, _format_label_lines(model_answer_labels), COLOURS["answer"]))
+    text_rows = max(1, len(text_panels))
     gs = fig.add_gridspec(text_rows, 2, width_ratios=[1, 2], hspace=0.35, wspace=0.25)
 
-    # Left column: textual info
-    ax_gt = fig.add_subplot(gs[0, 0])
-    gt_text_colour = COLOURS["correct_neighbour"] if has_answer else COLOURS["truth"]
-    _render_text_block(
-        ax_gt,
-        title="Ground truth",
-        lines=_format_label_lines(highlight_labels_text),
-        empty_message="(none)",
-        colour=gt_text_colour,
-    )
-
-    if show_model_answer:
-        ax_ans = fig.add_subplot(gs[1, 0])
-        _render_text_block(
-            ax_ans,
-            title=model_label,
-            lines=_format_label_lines(model_answer_labels),
-            empty_message="(none)",
-            colour=COLOURS["answer"],
-        )
+    # Left column: textual info (optional)
+    if text_panels:
+        for row_idx, (title, lines, colour) in enumerate(text_panels):
+            ax_text = fig.add_subplot(gs[row_idx, 0])
+            _render_text_block(
+                ax_text,
+                title=title,
+                lines=lines,
+                empty_message="(none)",
+                colour=colour,
+            )
+    else:
+        fig.add_subplot(gs[0, 0]).axis("off")
     interactive_artists: list[plt.Artist] = []
 
     if dim == Dimension.D3:

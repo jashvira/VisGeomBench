@@ -9,7 +9,12 @@ from typing import Any
 import matplotlib.pyplot as plt
 import numpy as np
 
-from .render import get_answer_label, register_renderer
+from .render import (
+    get_answer_label,
+    register_renderer,
+    should_render_answers,
+    should_render_truth,
+)
 from .styles import COLOURS
 
 _UNIT_SQUARE = np.array(
@@ -106,50 +111,67 @@ def _render_two_segments(
     xmin, xmax = float(corners[:, 0].min()) - 0.1, float(corners[:, 0].max()) + 0.1
     ymin, ymax = float(corners[:, 1].min()) - 0.1, float(corners[:, 1].max()) + 0.1
 
-    fig, axes = plt.subplots(1, 2, figsize=(10, 5), constrained_layout=True)
+    render_truth = should_render_truth(record)
+    render_answers = should_render_answers(record)
+    if not render_truth and not render_answers:
+        render_truth = True
+
+    panels: list[tuple[str, str]] = []
+    if render_truth:
+        panels.append(("prompt", "Requirements"))
+    if render_answers:
+        panels.append(("answer", get_answer_label(record)))
+    if not panels:
+        panels.append(("prompt", "Requirements"))
+
+    fig, axes = plt.subplots(1, len(panels), figsize=(5.2 * len(panels), 5), constrained_layout=True)
+    if not isinstance(axes, np.ndarray):
+        axes = np.array([axes])
+    axes = axes.flatten()
     fig.suptitle("Two Segments", fontsize=15, weight="bold")
     fig.patch.set_facecolor("white")
+
+    panel_axes: dict[str, plt.Axes] = {}
+    for ax, (role, title) in zip(axes, panels, strict=True):
+        plt.sca(ax)
+        _panel_setup(title, (xmin, xmax, ymin, ymax))
+        ax.set_facecolor("#FAFAFA")
+        if role == "answer":
+            _draw_square(ax, corners)
+        panel_axes[role] = ax
 
     counts = record.get("ground_truth", [])
     counts_lines = _format_counts(counts)
     prompt_text = _format_prompt_block(counts_lines)
-
-    answer_title = get_answer_label(record)
-    for ax, title in zip(axes, ("", answer_title), strict=True):
-        plt.sca(ax)
-        _panel_setup(title, (xmin, xmax, ymin, ymax))
-        ax.set_facecolor("#FAFAFA")
-        if title == answer_title:
-            _draw_square(ax, corners)
-
-    # Prompt panel: textual summary of requirements
-    axes[0].text(
-        0.5,
-        0.5,
-        prompt_text,
-        ha="center",
-        va="center",
-        fontsize=11,
-        color=COLOURS["truth"],
-        weight="bold",
-        bbox=dict(boxstyle="round,pad=0.8", facecolor="white", edgecolor=COLOURS["truth"], linewidth=2),
-    )
-
-    # Answer: draw model segments if provided; otherwise indicate none
-    parsed_segments = _coerce_segments(answer)
-    ax_ans = axes[1]
-    if parsed_segments is None:
-        ax_ans.text(
+    ax_prompt = panel_axes.get("prompt")
+    if ax_prompt:
+        ax_prompt.text(
             0.5,
             0.5,
-            "No segments provided",
+            prompt_text,
             ha="center",
             va="center",
             fontsize=11,
-            color=COLOURS["answer"],
+            color=COLOURS["truth"],
+            weight="bold",
+            bbox=dict(boxstyle="round,pad=0.8", facecolor="white", edgecolor=COLOURS["truth"], linewidth=2),
         )
-    else:
-        _draw_segments(ax_ans, parsed_segments, color=COLOURS["answer"])
+
+    ax_ans = panel_axes.get("answer")
+    if ax_ans:
+        parsed_segments = _coerce_segments(answer)
+        if parsed_segments is None:
+            ax_ans.text(
+                0.5,
+                0.5,
+                "No segments provided",
+                ha="center",
+                va="center",
+                fontsize=11,
+                color=COLOURS["answer"],
+            )
+        else:
+            _draw_segments(ax_ans, parsed_segments, color=COLOURS["answer"])
 
     return fig
 

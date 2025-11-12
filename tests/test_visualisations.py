@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 
 from scripts.render_eval_visuals import render_results
-from visualisations.render import register_renderer, visualise_record
+from visualisations.render import RenderMode, register_renderer, visualise_record
 
 from visual_geometry_bench.datagen.convex_hull_tasks import (
     _compute_convex_hull,
@@ -95,6 +95,29 @@ def test_convex_hull_renderer_generates_figure(renderers_ready):
     assert isinstance(fig, plt.Figure)
     assert len(fig.axes) == 2
     plt.close(fig)
+
+
+def test_render_modes_split_panels(renderers_ready):
+    datagen_args = {"num_points": 6, "seed": 17}
+    points = np.array(convex_to_points(datagen_args), dtype=float)
+    hull = _compute_convex_hull(points)
+    assert hull is not None
+    hull_indices = _hull_to_canonical_indices(hull)
+
+    record = {
+        "id": "convex-mode",
+        "metadata": {"problem_type": "convex_hull_ordering"},
+        "datagen_args": datagen_args,
+        "ground_truth": hull_indices,
+    }
+
+    fig_truth = visualise_record(record, hull_indices, mode=RenderMode.GROUND_TRUTH)
+    assert len(fig_truth.axes) == 1
+    plt.close(fig_truth)
+
+    fig_answer = visualise_record(record, hull_indices, mode=RenderMode.MODEL_ANSWER)
+    assert len(fig_answer.axes) == 1
+    plt.close(fig_answer)
 
 
 def test_convex_hull_circle_renderer_adjusts_axes(renderers_ready):
