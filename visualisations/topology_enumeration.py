@@ -203,21 +203,7 @@ def _render_sections(
             row = blank_idx // cols
             col = blank_idx % cols
             fig.add_subplot(sub[row, col]).axis("off")
-        if section_axes:
-            bboxes = [ax.get_position(fig) for ax in section_axes]
-            x0 = min(bb.x0 for bb in bboxes)
-            x1 = max(bb.x1 for bb in bboxes)
-            y1 = max(bb.y1 for bb in bboxes)
-            fig.text(
-                (x0 + x1) / 2,
-                y1 + 0.02,
-                f"{label} • {len(items)} cases",
-                color=colour,
-                weight="semibold",
-                fontsize=12,
-                ha="center",
-                va="bottom",
-            )
+        # Intentionally omit section-level text labels to keep the canvas uncluttered.
 
 
 def _build_sections(

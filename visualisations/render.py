@@ -136,7 +136,7 @@ def visualise_record(
                 fig.savefig(target, format=fmt, dpi=150)
                 plt.close(fig)
         else:
-            result.savefig(output_path, format=fmt, dpi=150, bbox_inches="tight")
+            result.savefig(output_path, format=fmt, dpi=150)
             plt.close(result)
 
     return result
@@ -191,4 +191,4 @@ def _persist_figures(result: RendererResult, base_dir: Path, record_id: str, fmt
 
 def _save_figure(fig: plt.Figure, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, bbox_inches="tight")
+    fig.savefig(path)

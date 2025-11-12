@@ -315,15 +315,19 @@ def _render_convex_hull(
                 _scatter_subset(extra, color=COLOURS["extra_vertex"], label="Extra vertex")
 
     if legend_entries:
-        fig.subplots_adjust(top=0.7)
+        fig.subplots_adjust(top=0.72)
+        num_entries = len(legend_entries)
+        legend_cols = 2 if num_entries >= 3 else num_entries
         fig.legend(
             legend_entries.values(),
             legend_entries.keys(),
             loc="upper center",
-            bbox_to_anchor=(0.5, 0.88),
-            ncol=len(legend_entries),
+            bbox_to_anchor=(0.5, 0.93),
+            ncol=max(1, legend_cols),
             frameon=True,
             framealpha=0.95,
+            columnspacing=0.8,
+            handlelength=2.2,
         )
 
     return fig

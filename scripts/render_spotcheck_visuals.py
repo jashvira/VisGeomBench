@@ -10,6 +10,7 @@ from typing import Any
 
 from visual_geometry_bench.evaluation.answer_parser import PythonLiteralParser
 from visualisations import visualise_record
+from visualisations.render import RenderMode
 
 
 def _clean_dataset_name(stem: str) -> str:
@@ -44,6 +45,8 @@ def render_spotchecks(
     dataset_path: Path,
     output_dir: Path,
     indices: list[int],
+    *,
+    mode: RenderMode,
 ) -> None:
     rows = _load_jsonl(results_path)
     if not rows:
@@ -98,6 +101,7 @@ def render_spotchecks(
                 output_stub=output_stub,
                 metadata_caption=f"{caption_prefix} · Q{idx}",
                 answer_label=model_name,
+                mode=mode,
             )
             print(f"[{idx}] rendered to {output_dir}/{output_stub}.png")
         except Exception as exc:  # noqa: BLE001
@@ -128,6 +132,13 @@ def main() -> None:
     parser.add_argument("output_dir", type=Path)
     parser.add_argument("--limit", type=int, default=1, help="Number of leading questions to visualise")
     parser.add_argument("--indices", type=str, help="Comma/range list of 1-based question indices (overrides --limit)")
+    parser.add_argument(
+        "--mode",
+        type=str,
+        default=RenderMode.BOTH.value,
+        choices=[m.value for m in RenderMode],
+        help="Which panels to render (default: both)",
+    )
     args = parser.parse_args()
 
     rows = _load_jsonl(args.results)
@@ -135,7 +146,8 @@ def main() -> None:
         raise SystemExit(f"No rows found in {args.results}")
     indices = parse_indices(args.limit, args.indices, len(rows))
 
-    render_spotchecks(args.results, args.dataset, args.output_dir, indices)
+    mode = RenderMode.from_value(args.mode)
+    render_spotchecks(args.results, args.dataset, args.output_dir, indices, mode=mode)
 
 
 if __name__ == "__main__":
