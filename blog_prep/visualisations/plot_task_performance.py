@@ -44,6 +44,8 @@ MODEL_BRANDING = {
     },
 }
 
+SHOW_BAR_ICONS = True
+
 
 def _friendly_model_name(dirname: str) -> str:
     # Use the suffix after the last double-dash as the readable model label.
@@ -269,6 +271,8 @@ def plot_subplots(task_metrics):
 
 
 def _add_icons_on_bars(ax, bars, models):
+    if not SHOW_BAR_ICONS:
+        return
     for bar, model in zip(bars, models):
         branding = MODEL_BRANDING.get(model)
         if not branding:
