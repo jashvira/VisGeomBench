@@ -43,6 +43,20 @@ uv run python scripts/generate_dataset.py configs/sample_dataset.toml
 uv run pytest tests/ -v
 ```
 
+## Render Visualisations
+
+Generate question/ground-truth figures and model-answer figures separately:
+
+```bash
+# Ground-truth prompts / references
+uv run python scripts/render_ground_truth.py data/<dataset>.jsonl --out data/figures/questions
+
+# Model answers (requires JSONL with {"id", "answer"})
+uv run python scripts/render_model_answers.py data/<dataset>.jsonl outputs/<answers>.jsonl --out data/figures/model_answers --metadata-caption "Model XYZ"
+```
+
+Use `--detail` to enable verbose render modes and `--suffix`/`--fmt` to customise filenames and image formats.
+
 ## Evaluate
 
 ```bash
