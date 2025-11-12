@@ -8,116 +8,319 @@ We probe how models reconstruct global structure from fragments, reason across s
 ### Convex Hull Ordering
 Given scattered 2D points, identify which lie on the convex boundary and order them counter-clockwise. Points cluster near edges to stress global shape recovery amidst local clutter. Models must distinguish boundary from interior and maintain rotational consistency.
 
-<table>
-  <tr>
-    <td style="text-align:center;">
-      <img src="blog_prep/model_visuals/gemini-2.5-pro/convex_hull_curated/question_002.png" alt="Convex hull ordering · Gemini 2.5 Pro" width="320"><br>
-      Gemini 2.5 Pro
-    </td>
-    <td style="text-align:center;">
-      <img src="blog_prep/model_visuals/gpt-5-2025-08-07/convex_hull_curated/question_002.png" alt="Convex hull ordering · GPT-5" width="320"><br>
-      GPT‑5 (2025‑08‑07)
-    </td>
-  </tr>
-</table>
+<details open>
+<summary style="cursor:pointer; font-weight:600;">Sample Question 1</summary>
+
+<div style="display:flex;gap:16px;flex-wrap:nowrap;margin:12px 0;overflow-x:auto;">
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/convex_hull_curated/questions_gt/question_001.png" alt="Convex hull question" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption><strong>Question</strong></figcaption>
+  </figure>
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/convex_hull_curated/model_answers/question_001.png" alt="Gemini answer" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption>Gemini 2.5 Pro</figcaption>
+  </figure>
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--gpt-5-2025-08-07/convex_hull_curated/model_answers/question_001.png" alt="GPT-5 answer" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption>GPT‑5 (2025‑08‑07)</figcaption>
+  </figure>
+</div>
+
+</details>
+
+<details>
+<summary>Sample Question 2</summary>
+
+<div style="display:flex;gap:16px;flex-wrap:nowrap;margin:12px 0;overflow-x:auto;">
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/convex_hull_curated/questions_gt/question_002.png" alt="Question" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption style="font-size:0.9em;color:#666;">Question</figcaption>
+  </figure>
+  
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/convex_hull_curated/model_answers/question_002.png" alt="Gemini 2.5 Pro Answer" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption style="font-size:0.9em;color:#666;">Gemini 2.5 Pro Answer</figcaption>
+  </figure>
+  
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--gpt-5-2025-08-07/convex_hull_curated/model_answers/question_002.png" alt="GPT-5 Answer" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption style="font-size:0.9em;color:#666;">GPT-5 Answer</figcaption>
+  </figure>
+</div>
+
+</details>
 
 ### Delaunay Triangulation
 Partition a point set into triangles satisfying the empty-circle property: no point lies inside any triangle's circumcircle. The constraint is global—each triangle depends on all others—testing whether models grasp metric invariances and maintain combinatorial precision across the entire structure.
 
-<table>
-  <tr>
-    <td style="text-align:center;">
-      <img src="blog_prep/model_visuals/gemini-2.5-pro/delaunay_dataset/question_001.png" alt="Delaunay triangulation · Gemini 2.5 Pro" width="320"><br>
-      Gemini 2.5 Pro
-    </td>
-    <td style="text-align:center;">
-      <img src="blog_prep/model_visuals/gpt-5-2025-08-07/delaunay_dataset/question_001.png" alt="Delaunay triangulation · GPT-5" width="320"><br>
-      GPT‑5 (2025‑08‑07)
-    </td>
-  </tr>
-</table>
+<details open>
+<summary style="cursor:pointer; font-weight:600;">Sample Question 1</summary>
+
+<div style="display:flex;gap:16px;flex-wrap:nowrap;margin:12px 0;overflow-x:auto;">
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/delaunay_dataset/questions_gt/question_001.png" alt="Delaunay question" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption><strong>Question</strong></figcaption>
+  </figure>
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/delaunay_dataset/model_answers/question_001.png" alt="Gemini answer" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption>Gemini 2.5 Pro</figcaption>
+  </figure>
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--gpt-5-2025-08-07/delaunay_dataset/model_answers/question_001.png" alt="GPT-5 answer" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption>GPT‑5 (2025‑08‑07)</figcaption>
+  </figure>
+</div>
+
+</details>
+
+<details>
+<summary>Sample Question 2</summary>
+
+<div style="display:flex;gap:16px;flex-wrap:nowrap;margin:12px 0;overflow-x:auto;">
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/delaunay_dataset/questions_gt/question_002.png" alt="Question" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption style="font-size:0.9em;color:#666;">Question</figcaption>
+  </figure>
+  
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/delaunay_dataset/model_answers/question_002.png" alt="Gemini 2.5 Pro Answer" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption style="font-size:0.9em;color:#666;">Gemini 2.5 Pro Answer</figcaption>
+  </figure>
+  
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--gpt-5-2025-08-07/delaunay_dataset/model_answers/question_002.png" alt="GPT-5 Answer" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption style="font-size:0.9em;color:#666;">GPT-5 Answer</figcaption>
+  </figure>
+</div>
+
+</details>
 
 ### Topology Enumeration
 Which corner labellings of a square force distinct regions to meet inside? Continuous boundaries may curve arbitrarily; only corner labels are observed. Models must enumerate all configurations that guarantee junctions, canonicalised to remove label symmetries.
 
-<table>
-  <tr>
-    <td style="text-align:center;">
-      <img src="blog_prep/model_visuals/gemini-2.5-pro/topology_enumeration_curated/question_001.png" alt="Topology enumeration · Gemini 2.5 Pro" width="320"><br>
-      Gemini 2.5 Pro
-    </td>
-    <td style="text-align:center;">
-      <img src="blog_prep/model_visuals/gpt-5-2025-08-07/topology_enumeration_curated/question_001.png" alt="Topology enumeration · GPT-5" width="320"><br>
-      GPT‑5 (2025‑08‑07)
-    </td>
-  </tr>
-</table>
+<details open>
+<summary style="cursor:pointer; font-weight:600;">Sample Question 1</summary>
+
+<div style="display:flex;gap:16px;flex-wrap:nowrap;margin:12px 0;overflow-x:auto;">
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/topology_enumeration_curated/questions_gt/question_001.png" alt="Topology enumeration question" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption><strong>Question</strong></figcaption>
+  </figure>
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <div style="width:100%;border:1px dashed #d1d5db;margin:0 0 8px;padding:28px 16px;font-style:italic;color:#6b7280;text-align:center;">Pending render</div>
+    <figcaption>Gemini 2.5 Pro</figcaption>
+  </figure>
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <div style="width:100%;border:1px dashed #d1d5db;margin:0 0 8px;padding:28px 16px;font-style:italic;color:#6b7280;text-align:center;">Pending render</div>
+    <figcaption>GPT‑5 (2025‑08‑07)</figcaption>
+  </figure>
+</div>
+
+</details>
+
+<details>
+<summary>Sample Question 2</summary>
+
+<div style="display:flex;gap:16px;flex-wrap:nowrap;margin:12px 0;overflow-x:auto;">
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/topology_enumeration_curated/questions_gt/question_002.png" alt="Question" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption style="font-size:0.9em;color:#666;">Question</figcaption>
+  </figure>
+  
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/topology_enumeration_curated/model_answers/question_002.png" alt="Gemini 2.5 Pro Answer" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption style="font-size:0.9em;color:#666;">Gemini 2.5 Pro Answer</figcaption>
+  </figure>
+  
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--gpt-5-2025-08-07/topology_enumeration_curated/model_answers/question_002.png" alt="GPT-5 Answer" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption style="font-size:0.9em;color:#666;">GPT-5 Answer</figcaption>
+  </figure>
+</div>
+
+</details>
 
 ### Topology Edge Tasks
 **Enumerate edges**: Given corner labels, which boundary edges must connect through the interior?  
 
 Models infer connectivity from minimal boundary information, handling cases where topology alone cannot determine outcomes.
 
-<table>
-  <tr>
-    <td style="text-align:center;">
-      <img src="blog_prep/model_visuals/gemini-2.5-pro/topology_edge_enumerate_curated/question_001.png" alt="Topology edge reasoning · Gemini 2.5 Pro" width="320"><br>
-      Gemini 2.5 Pro
-    </td>
-    <td style="text-align:center;">
-      <img src="blog_prep/model_visuals/gpt-5-2025-08-07/topology_edge_enumerate_curated/question_001.png" alt="Topology edge reasoning · GPT-5" width="320"><br>
-      GPT‑5 (2025‑08‑07)
-    </td>
-  </tr>
-</table>
+<details open>
+<summary style="cursor:pointer; font-weight:600;">Sample Question 1</summary>
+
+<div style="display:flex;gap:16px;flex-wrap:nowrap;margin:12px 0;overflow-x:auto;">
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/topology_edge_enumerate_curated/questions_gt/question_001.png" alt="Topology edge question" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption><strong>Question</strong></figcaption>
+  </figure>
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/topology_edge_enumerate_curated/model_answers/question_001.png" alt="Gemini answer" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption>Gemini 2.5 Pro</figcaption>
+  </figure>
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--gpt-5-2025-08-07/topology_edge_enumerate_curated/model_answers/question_001.png" alt="GPT-5 answer" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption>GPT‑5 (2025‑08‑07)</figcaption>
+  </figure>
+</div>
+
+</details>
+
+<details>
+<summary>Sample Question 2</summary>
+
+<div style="display:flex;gap:16px;flex-wrap:nowrap;margin:12px 0;overflow-x:auto;">
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/topology_edge_enumerate_curated/questions_gt/question_002.png" alt="Question" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption style="font-size:0.9em;color:#666;">Question</figcaption>
+  </figure>
+  
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/topology_edge_enumerate_curated/model_answers/question_002.png" alt="Gemini 2.5 Pro Answer" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption style="font-size:0.9em;color:#666;">Gemini 2.5 Pro Answer</figcaption>
+  </figure>
+  
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--gpt-5-2025-08-07/topology_edge_enumerate_curated/model_answers/question_002.png" alt="GPT-5 Answer" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption style="font-size:0.9em;color:#666;">GPT-5 Answer</figcaption>
+  </figure>
+</div>
+
+</details>
 
 ### Half Subdivision Neighbours
 A square or cube is recursively split along axis-aligned planes. Given a target leaf cell, list all adjacent neighbours. The hierarchy is textual; models must track nested containment and compute exact face-sharing in discretised space.
 
-<table>
-  <tr>
-    <td style="text-align:center;">
-      <img src="blog_prep/model_visuals/gemini-2.5-pro/half_subdivision/question_002.png" alt="Half subdivision neighbours · Gemini 2.5 Pro" width="320"><br>
-      Gemini 2.5 Pro
-    </td>
-    <td style="text-align:center;">
-      <img src="blog_prep/model_visuals/gpt-5-2025-08-07/half_subdivision/question_002.png" alt="Half subdivision neighbours · GPT-5" width="320"><br>
-      GPT‑5 (2025‑08‑07)
-    </td>
-  </tr>
-</table>
+<details open>
+<summary style="cursor:pointer; font-weight:600;">Sample Question 1</summary>
+
+<div style="display:flex;gap:16px;flex-wrap:nowrap;margin:12px 0;overflow-x:auto;">
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/half_subdivision/questions_gt/question_002.png" alt="Half subdivision question" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption><strong>Question</strong></figcaption>
+  </figure>
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <div style="width:100%;border:1px dashed #d1d5db;margin:0 0 8px;padding:28px 16px;font-style:italic;color:#6b7280;text-align:center;">Pending render</div>
+    <figcaption>Gemini 2.5 Pro</figcaption>
+  </figure>
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--gpt-5-2025-08-07/half_subdivision/model_answers/question_002.png" alt="GPT-5 answer" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption>GPT‑5 (2025‑08‑07)</figcaption>
+  </figure>
+</div>
+
+</details>
+
+<details>
+<summary>Question 2 visuals</summary>
+
+<div style="display:flex;gap:16px;flex-wrap:nowrap;margin:12px 0;overflow-x:auto;">
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/half_subdivision/questions_gt/question_003.png" alt="Question" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption style="font-size:0.9em;color:#666;">Question</figcaption>
+  </figure>
+  
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/half_subdivision/model_answers/question_003.png" alt="Gemini 2.5 Pro Answer" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption style="font-size:0.9em;color:#666;">Gemini 2.5 Pro Answer</figcaption>
+  </figure>
+  
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--gpt-5-2025-08-07/half_subdivision/model_answers/question_003.png" alt="GPT-5 Answer" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption style="font-size:0.9em;color:#666;">GPT-5 Answer</figcaption>
+  </figure>
+</div>
+
+</details>
 
 ### Shikaku Rectangles
 Partition a grid into rectangles such that each contains exactly one number equal to its area. Constraints are local (area match) and global (full coverage, no gaps). Models must satisfy both simultaneously through spatial planning.
 
-<table>
-  <tr>
-    <td style="text-align:center;">
-      <img src="blog_prep/model_visuals/gemini-2.5-pro/shikaku_curated/question_003.png" alt="Shikaku partition · Gemini 2.5 Pro" width="320"><br>
-      Gemini 2.5 Pro
-    </td>
-    <td style="text-align:center;">
-      <img src="blog_prep/model_visuals/gpt-5-2025-08-07/shikaku_curated/question_003.png" alt="Shikaku partition · GPT-5" width="320"><br>
-      GPT‑5 (2025‑08‑07)
-    </td>
-  </tr>
-</table>
+<details open>
+<summary style="cursor:pointer; font-weight:600;">Sample Question 1</summary>
+
+<div style="display:flex;gap:16px;flex-wrap:nowrap;margin:12px 0;overflow-x:auto;">
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/shikaku_curated/questions_gt/question_003.png" alt="Shikaku question" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption><strong>Question</strong></figcaption>
+  </figure>
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/shikaku_curated/model_answers/question_003.png" alt="Shikaku answer · Gemini" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption>Gemini 2.5 Pro</figcaption>
+  </figure>
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--gpt-5-2025-08-07/shikaku_curated/model_answers/question_003.png" alt="Shikaku answer · GPT-5" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption>GPT‑5 (2025‑08‑07)</figcaption>
+  </figure>
+</div>
+
+</details>
+
+<details>
+<summary>Sample Question 2</summary>
+
+<div style="display:flex;gap:16px;flex-wrap:nowrap;margin:12px 0;overflow-x:auto;">
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/shikaku_curated/questions_gt/question_004.png" alt="Question" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption style="font-size:0.9em;color:#666;">Question</figcaption>
+  </figure>
+  
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/shikaku_curated/model_answers/question_004.png" alt="Gemini 2.5 Pro Answer" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption style="font-size:0.9em;color:#666;">Gemini 2.5 Pro Answer</figcaption>
+  </figure>
+  
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--gpt-5-2025-08-07/shikaku_curated/model_answers/question_004.png" alt="GPT-5 Answer" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption style="font-size:0.9em;color:#666;">GPT-5 Answer</figcaption>
+  </figure>
+</div>
+
+</details>
 
 ### Two Segments
 Place two straight segments inside a square to create a specified mix of triangles, quadrilaterals, pentagons, and hexagons. Endpoints must lie on the boundary. Models must construct valid geometric solutions to combinatorial constraints, balancing feasibility with target counts.
 
-<table>
-  <tr>
-    <td style="text-align:center;">
-      <img src="blog_prep/model_visuals/gemini-2.5-pro/two_segments_curated/question_002.png" alt="Two segments construction · Gemini 2.5 Pro" width="320"><br>
-      Gemini 2.5 Pro
-    </td>
-    <td style="text-align:center;">
-      <img src="blog_prep/model_visuals/gpt-5-2025-08-07/two_segments_curated/question_002.png" alt="Two segments construction · GPT-5" width="320"><br>
-      GPT‑5 (2025‑08‑07)
-    </td>
-  </tr>
-</table>
+<details open>
+<summary style="cursor:pointer; font-weight:600;">Sample Question 1</summary>
+
+<div style="display:flex;gap:16px;flex-wrap:nowrap;margin:12px 0;overflow-x:auto;">
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/two_segments_curated/questions_gt/question_002.png" alt="Two segments question" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption><strong>Question</strong></figcaption>
+  </figure>
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/two_segments_curated/model_answers/question_002.png" alt="Two segments answer · Gemini" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption>Gemini 2.5 Pro</figcaption>
+  </figure>
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--gpt-5-2025-08-07/two_segments_curated/model_answers/question_002.png" alt="Two segments answer · GPT-5" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption>GPT‑5 (2025‑08‑07)</figcaption>
+  </figure>
+</div>
+
+</details>
+
+<details>
+<summary>Question 2 visuals</summary>
+
+<div style="display:flex;gap:16px;flex-wrap:nowrap;margin:12px 0;overflow-x:auto;">
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/two_segments_curated/questions_gt/question_003.png" alt="Question" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption style="font-size:0.9em;color:#666;">Question</figcaption>
+  </figure>
+  
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/two_segments_curated/model_answers/question_003.png" alt="Gemini 2.5 Pro Answer" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption style="font-size:0.9em;color:#666;">Gemini 2.5 Pro Answer</figcaption>
+  </figure>
+  
+  <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
+    <img src="blog_prep/visual_geometry_bench.evaluation--gpt-5-2025-08-07/two_segments_curated/model_answers/question_003.png" alt="GPT-5 Answer" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+    <figcaption style="font-size:0.9em;color:#666;">GPT-5 Answer</figcaption>
+  </figure>
+</div>
+
+</details>
 
 ---
 
