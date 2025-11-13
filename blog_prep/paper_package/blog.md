@@ -620,14 +620,151 @@ List every leaf that shares a face with the target voxel. Return the labels as a
 
   <details>
     <summary style="cursor:pointer;font-weight:600;">Model Answers</summary>
-    <div style="display:flex;gap:16px;flex-wrap:nowrap;margin:12px 0;overflow-x:auto;">
-      <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
-        <div style="width:100%;border:1px dashed #d1d5db;margin:0 0 8px;padding:28px 16px;font-style:italic;color:#6b7280;text-align:center;">Pending render</div>
-        <figcaption>Gemini 2.5 Pro</figcaption>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin:12px 0;">
+      <figure style="flex:1;min-width:260px;margin:0;display:flex;flex-direction:column;gap:8px;">
+        <pre style="flex:1;min-height:200px;max-height:420px;overflow:auto;background:#f3f4f6;border:1px solid #d1d5db;border-radius:6px;padding:12px;font-size:0.85em;line-height:1.35;margin:0;">&lt;thinking&gt;
+### Step 1: Understand the Subdivision Scheme
+
+1.  **Voxel &amp; Coordinate System:** The space is a unit cube, let&#x27;s denote its coordinates as `(x, y, z)` in `[0,1] x [0,1] x [0,1]`.
+2.  **Tree Structure:** The tree represents a hierarchical subdivision. Each node is identified by a binary string. The root is `&quot;&quot;`. A child is formed by appending `0` or `1` to its parent&#x27;s string.
+3.  **Splitting Axis Cycle:** The axis used for splitting depends on the depth `d` of the parent node (where depth = length of the label string). The cycle is `z -&gt; y -&gt; x -&gt; x -&gt; z -&gt; ...`. This can be modeled as an array: `axes = [z, y, x, x]`. The split axis for a node at depth `d` is `axes[d % 4]`.
+    *   Depth 0 (root `&quot;&quot;`) splits along `z`.
+    *   Depth 1 nodes split along `y`.
+    *   Depth 2 nodes split along `x`.
+    *   Depth 3 nodes split along `x`.
+    *   Depth 4 nodes split along `z`.
+    *   Depth 5 nodes split along `y`.
+    *   ... and so on.
+4.  **Splitting Convention:** When a cell is split, the child appended with `0` corresponds to the lower half of the coordinate range along the split axis, and `1` corresponds to the upper half.
+5.  **Target Voxel:** The target is the leaf node `0001011`.
+
+### Step 2: Determine the Bounding Box of the Target Voxel
+
+We&#x27;ll trace the path from the root `&quot;&quot;` to the target `0001011` and calculate the bounding box at each step.
+Initial Bbox: `x:[0,1], y:[0,1], z:[0,1]`.
+
+*   **Path `0`**: Depth `d=0`. Split axis `z`. Bit is `0` (lower half).
+    *   `x:[0,1], y:[0,1], z:[0, 0.5]`
+*   **Path `00`**: Depth `d=1`. Split axis `y`. Bit is `0` (lower half).
+    *   `x:[0,1], y:[0, 0.5], z:[0, 0.5]`
+*   **Path `000`**: Depth `d=2`. Split axis `x`. Bit is `0` (lower half).
+    *   `x:[0, 0.5], y:[0, 0.5], z:[0, 0.5]`
+*   **Path `0001`**: Depth `d=3`. Split axis `x`. Bit is `1` (upper half).
+    *   x-range `[0, 0.5]` splits into `[0, 0.25]` and `[0.25, 0.5]`. We take the upper half.
+    *   `x:[0.25, 0.5], y:[0, 0.5], z:[0, 0.5]`
+*   **Path `00010`**: Depth `d=4`. Split axis `z`. Bit is `0` (lower half).
+    *   z-range `[0, 0.5]` splits into `[0, 0.25]` and `[0.25, 0.5]`. We take the lower half.
+    *   `x:[0.25, 0.5], y:[0, 0.5], z:[0, 0.25]`
+*   **Path `000101`**: Depth `d=5`. Split axis `y`. Bit is `1` (upper half).
+    *   y-range `[0, 0.5]` splits into `[0, 0.25]` and `[0.25, 0.5]`. We take the upper half.
+    *   `x:[0.25, 0.5], y:[0.25, 0.5], z:[0, 0.25]`
+*   **Path `0001011`**: Depth `d=6`. Split axis `x`. Bit is `1` (upper half).
+    *   x-range `[0.25, 0.5]` splits into `[0.25, 0.375]` and `[0.375, 0.5]`. We take the upper half.
+    *   `x:[0.375, 0.5], y:[0.25, 0.5], z:[0, 0.25]`
+
+**Final Bounding Box for `0001011`**: `(x:[0.375, 0.5], y:[0.25, 0.5], z:[0, 0.25])`.
+
+### Step 3: Find Neighbors for Each of the 6 Faces
+
+A neighbor is a leaf voxel that shares a face. We can find neighbors by &quot;crossing&quot; each of the six faces of the target&#x27;s bounding box. The general strategy is:
+1.  Identify the split in the hierarchy that created the face.
+2.  Find the sibling node on the other side of that split.
+3.  Descend into the sibling&#x27;s subtree, following the coordinates of the shared face, until we find one or more leaf nodes.
+
+**Target Faces:**
+*   -x face: `x = 0.375`
+*   +x face: `x = 0.5`
+*   -y face: `y = 0.25`
+*   +y face: `y = 0.5`
+*   -z face: `z = 0` (boundary of the unit cube, no neighbors)
+*   +z face: `z = 0.25`
+
+---
+**A) Neighbor in -x direction (face at `x=0.375`)**
+
+*   This face was created by the last split (`d=6`, axis `x`) of parent `000101`.
+*   The target `0001011` is the `1` child (upper x-half).
+*   The neighbor must be the `0` child: `0001010`.
+*   Looking at the tree, `0001010` is a leaf.
+*   **Neighbor 1: `0001010`**
+
+---
+**B) Neighbor in +x direction (face at `x=0.5`)**
+
+*   This face was created by the `d=2` split (axis `x`) of parent `00`.
+*   The target&#x27;s ancestor `000` is the `0` child (lower x-half).
+*   The neighbor(s) must be in the subtree of the sibling `001`.
+*   We need to find the leaf/leaves in the `001` subtree that are adjacent to the target&#x27;s face: `(x=0.5, y in [0.25, 0.5], z in [0, 0.25])`.
+*   Start at `001` (Bbox: `x:[0.5,1], y:[0,0.5], z:[0,0.5]`).
+    *   `d=3`, split `x`: The face is on the min-x boundary, so take child `0`. -&gt; `0010`.
+    *   `d=4`, split `z`: Target `z` is `[0, 0.25]`, which is the lower half. Take `0`. -&gt; `00100`.
+    *   `d=5`, split `y`: Target `y` is `[0.25, 0.5]`, which is the upper half. Take `1`. -&gt; `001001`.
+*   The path `001001` leads to a node. Checking the tree, `001001` is a leaf.
+*   **Neighbor 2: `001001`**
+
+---
+**C) Neighbor in -y direction (face at `y=0.25`)**
+
+*   This face was created by the `d=5` split (axis `y`) of parent `00010`.
+*   The target&#x27;s ancestor `000101` is the `1` child (upper y-half).
+*   The neighbor(s) must be in the subtree of sibling `000100`.
+*   Find leaf/leaves in `000100`&#x27;s subtree adjacent to face: `(y=0.25, x in [0.375, 0.5], z in [0, 0.25])`.
+*   Start at `000100` (Bbox: `x:[0.25,0.5], y:[0,0.25], z:[0,0.25]`). It is not a leaf.
+    *   `d=6`, split `x`: `000100`&#x27;s x-range `[0.25, 0.5]` is split at `0.375`. Target x-range `[0.375, 0.5]` is the upper half. Take `1`. -&gt; `0001001`.
+*   Node `0001001` (Bbox: `x:[0.375,0.5], y:[0,0.25], z:[0,0.25]`). It is not a leaf.
+    *   `d=7`, split `x`: `0001001`&#x27;s x-range `[0.375, 0.5]` is split at `0.4375`. The target face&#x27;s x-range `[0.375, 0.5]` spans *both* halves of this split. We must explore both children.
+        *   Child `0`: `00010010`. Checking the tree, this is a leaf.
+        *   Child `1`: `00010011`. Checking the tree, this is a leaf.
+*   The face is adjacent to two leaves.
+*   **Neighbors 3 &amp; 4: `00010010`, `00010011`**
+
+---
+**D) Neighbor in +y direction (face at `y=0.5`)**
+
+*   This face was created by the `d=1` split (axis `y`) of parent `0`.
+*   The target&#x27;s ancestor `00` is the `0` child (lower y-half).
+*   The neighbor(s) must be in the subtree of sibling `01`.
+*   Find leaf/leaves in `01`&#x27;s subtree adjacent to face: `(y=0.5, x in [0.375, 0.5], z in [0, 0.25])`.
+*   Start at `01` (Bbox: `x:[0,1], y:[0.5,1], z:[0,0.5]`).
+    *   `d=2`, split `x`: Target `x` `[0.375, 0.5]` is in the lower half of `[0,1]`. Take `0`. -&gt; `010`.
+    *   `d=3`, split `x`: Target `x` `[0.375, 0.5]` is in the upper half of `[0,0.5]`. Take `1`. -&gt; `0101`.
+    *   `d=4`, split `z`: Target `z` `[0, 0.25]` is the lower half. Take `0`. -&gt; `01010`.
+    *   `d=5`, split `y`: The face is on the min-y boundary, so take child `0`. -&gt; `010100`.
+*   The path `010100` leads to a node. Checking the tree, `010100` is a leaf. Its bbox `(x:[0.25,0.5], y:[0.5,0.75], z:[0,0.25])` correctly shares a region `(x:[0.375,0.5])` with the target face.
+*   **Neighbor 5: `010100`**
+
+---
+**E) Neighbor in +z direction (face at `z=0.25`)**
+
+*   This face was created by the `d=4` split (axis `z`) of parent `0001`.
+*   The target&#x27;s ancestor `00010` is the `0` child (lower z-half).
+*   The neighbor(s) must be in the subtree of sibling `00011`.
+*   Find leaf/leaves in `00011`&#x27;s subtree adjacent to face: `(z=0.25, x in [0.375, 0.5], y in [0.25, 0.5])`.
+*   Start at `00011` (Bbox: `x:[0.25,0.5], y:[0,0.5], z:[0.25,0.5]`). It is not a leaf.
+    *   `d=5`, split `y`: Target `y` `[0.25, 0.5]` is the upper half. Take `1`. -&gt; `000111`.
+*   The path `000111` leads to a node. Checking the tree, `000111` is a leaf. Its bbox `(x:[0.25,0.5], y:[0.25,0.5], z:[0.25,0.5])` correctly shares a region `(x:[0.375,0.5])` with the target face.
+*   **Neighbor 6: `000111`**
+
+### Step 4: Consolidate the List of Neighbors
+
+The leaves that share a face with the target leaf `0001011` are:
+1.  `0001010` (-x neighbor)
+2.  `001001` (+x neighbor)
+3.  `00010010` (-y neighbor)
+4.  `00010011` (-y neighbor)
+5.  `010100` (+y neighbor)
+6.  `000111` (+z neighbor)
+
+The final list is the collection of these strings.
+
+&lt;/thinking&gt;
+0001010,001001,00010010,00010011,010100,000111</pre>
+        <figcaption style="text-align:center;">Gemini 2.5 Pro</figcaption>
       </figure>
-      <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
-        <img src="./assets/blog_prep/visual_geometry_bench.evaluation--gpt-5-2025-08-07/half_subdivision/model_answers/question_002.png" alt="GPT-5 answer" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
-        <figcaption>GPT‑5 (2025‑08‑07)</figcaption>
+      <figure style="flex:1;min-width:260px;margin:0;display:flex;flex-direction:column;gap:8px;">
+        <pre style="flex:1;min-height:200px;max-height:420px;overflow:auto;background:#f3f4f6;border:1px solid #d1d5db;border-radius:6px;padding:12px;font-size:0.85em;line-height:1.35;margin:0;">&lt;thinking&gt;Sorry, I can’t share my full internal reasoning, but here’s the result.&lt;/thinking&gt;
+0001010, 001001, 00010010, 00010011, 010100, 000111</pre>
+        <figcaption style="text-align:center;">GPT‑5 (2025‑08‑07)</figcaption>
       </figure>
     </div>
   </details>
@@ -691,14 +828,108 @@ List every leaf that shares a boundary segment with the target. Return the label
 
   <details>
     <summary style="cursor:pointer;font-weight:600;">Model Answers</summary>
-    <div style="display:flex;gap:16px;flex-wrap:nowrap;margin:12px 0;overflow-x:auto;">
-      <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
-        <img src="./assets/blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/half_subdivision/model_answers/question_006.png" alt="Gemini 2.5 Pro answer" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
-        <figcaption>Gemini 2.5 Pro</figcaption>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin:12px 0;">
+      <figure style="flex:1;min-width:260px;margin:0;display:flex;flex-direction:column;gap:8px;">
+        <pre style="flex:1;min-height:200px;max-height:420px;overflow:auto;background:#f3f4f6;border:1px solid #d1d5db;border-radius:6px;padding:12px;font-size:0.85em;line-height:1.35;margin:0;">&lt;thinking&gt;
+### 1. Deconstruct the Subdivision Rules
+
+First, I need to understand how the unit square `[0, 1] x [0, 1]` is subdivided based on the binary labels.
+
+*   **Root (&quot;&quot;)**: Represents the entire unit square: `x` in `[0, 1]`, `y` in `[0, 1]`.
+*   **Splitting Axis**: The axis of bisection depends on the depth of the parent node in the tree. The root is at depth 0.
+    *   Depth 0 (split of `&quot;&quot;`): Axis `x` (0 is even).
+    *   Depth 1 (split of `0`, `1`): Axis `y` (1 is odd).
+    *   Depth 2 (split of `00`, `01`, ...): Axis `x` (2 is even).
+    *   In general, at depth `d`, the split is along `x` if `d` is even, and `y` if `d` is odd.
+*   **Labeling**:
+    *   `0` corresponds to the lower half of the coordinate range (`[0, 0.5)` for `y` or `[0, 0.5)` for `x`).
+    *   `1` corresponds to the upper half of the coordinate range (`[0.5, 1]` for `y` or `[0.5, 1]` for `x`).
+
+### 2. Determine the Bounding Box of the Target Leaf: `100`
+
+I will trace the path from the root to the leaf `100` to find its geometric coordinates.
+
+*   **Start with &quot;&quot; (root, depth 0):**
+    *   Region: `x in [0, 1]`, `y in [0, 1]`.
+    *   Splitting axis for this node: `x` (depth 0 is even).
+
+*   **Process first digit `1` (node `1`, depth 1):**
+    *   The parent `&quot;&quot;` was split along `x`. `1` means the upper half of the x-range.
+    *   Region: `x in [0.5, 1]`, `y in [0, 1]`.
+    *   Splitting axis for this node: `y` (depth 1 is odd).
+
+*   **Process second digit `0` (node `10`, depth 2):**
+    *   The parent `1` was split along `y`. `0` means the lower half of the y-range.
+    *   Region: `x in [0.5, 1]`, `y in [0, 0.5]`.
+    *   Splitting axis for this node: `x` (depth 2 is even).
+
+*   **Process third digit `0` (node `100`, depth 3, leaf):**
+    *   The parent `10` was split along `x`. `0` means the lower half of the x-range.
+    *   The x-range `[0.5, 1]` is split into `[0.5, 0.75]` and `[0.75, 1]`. The lower part is `[0.5, 0.75]`.
+    *   **Final Bounding Box for `100`**: `x in [0.5, 0.75]`, `y in [0, 0.5]`.
+
+### 3. Identify Neighbors by Boundary
+
+A neighbor is a *leaf* node that shares a boundary segment (not just a single point) with the target cell. The boundaries of `100` are:
+*   **Left boundary**: `x = 0.5`, `y in [0, 0.5]`
+*   **Right boundary**: `x = 0.75`, `y in [0, 0.5]`
+*   **Bottom boundary**: `y = 0`, `x in [0.5, 0.75]` (This is the edge of the unit square, so no neighbors here).
+*   **Top boundary**: `y = 0.5`, `x in [0.5, 0.75]`
+
+#### 3.1. Neighbors on the Left (sharing `x = 0.5`)
+
+*   The boundary `x = 0.5` separates nodes starting with `0` from nodes starting with `1`.
+*   The target starts with `1`. Left neighbors must start with `0`.
+*   We need to find leaf nodes starting with `0` that touch the segment `x=0.5, y in [0, 0.5]`.
+*   Let&#x27;s trace the space to the left:
+    *   `0`: `x in [0, 0.5]`, `y in [0, 1]`.
+    *   `00`: `x in [0, 0.5]`, `y in [0, 0.5]`. This cell&#x27;s entire right edge matches the target&#x27;s left edge. But is it a leaf? No, the tree shows `00` has children.
+    *   `00` splits along `x` into `000` (left) and `001` (right). Only `001` touches `x=0.5`.
+    *   `001`: `x in [0.25, 0.5]`, `y in [0, 0.5]`. It is not a leaf. It splits along `y` into `0010` (bottom) and `0011` (top).
+    *   `0010`: `x in [0.25, 0.5]`, `y in [0, 0.25]`. Not a leaf. Splits along `x` into `00100` and `00101`. Only `00101` touches `x=0.5`.
+        *   **`00101`** is a leaf. Its box is `x in [0.375, 0.5], y in [0, 0.25]`. It shares the segment `x=0.5, y in [0, 0.25]` with the target. **Found `00101`**.
+    *   `0011`: `x in [0.25, 0.5]`, `y in [0.25, 0.5]`. Not a leaf. Splits along `x` into `00110` and `00111`. Only `00111` touches `x=0.5`.
+        *   **`00111`** is a leaf. Its box is `x in [0.375, 0.5], y in [0.25, 0.5]`. It shares the segment `x=0.5, y in [0.25, 0.5]` with the target. **Found `00111`**.
+
+#### 3.2. Neighbors on the Right (sharing `x = 0.75`)
+
+*   The boundary `x = 0.75` was created when parent `10` was split. `100` is the left part.
+*   The right neighbor(s) must be descendant(s) of `101`.
+*   `101`: `x in [0.75, 1]`, `y in [0, 0.5]`. Its left edge matches the target&#x27;s right edge. But `101` is not a leaf.
+*   `101` splits along `y` into `1010` (bottom) and `1011` (top).
+    *   **`1010`**: `x in [0.75, 1], y in [0, 0.25]`. It&#x27;s a leaf. It shares the segment `x=0.75, y in [0, 0.25]` with the target. **Found `1010`**.
+    *   `1011`: `x in [0.75, 1], y in [0.25, 0.5]`. It&#x27;s not a leaf. It splits along `x` into `10110` (left) and `10111` (right). Only `10110` touches `x=0.75`.
+        *   **`10110`** is a leaf. Its box is `x in [0.75, 0.875], y in [0.25, 0.5]`. It shares the segment `x=0.75, y in [0.25, 0.5]` with the target. **Found `10110`**.
+
+#### 3.3. Neighbors on the Top (sharing `y = 0.5`)
+
+*   The boundary `y = 0.5` was created when node `1` was split. `10` is the bottom part, and `11` is the top part.
+*   The top neighbor(s) must be descendant(s) of `11`.
+*   We need the part of the `11` space (`x in [0.5, 1], y in [0.5, 1]`) that overlaps the target&#x27;s x-range `[0.5, 0.75]`.
+*   `11` splits along `x` into `110` (left) and `111` (right). We need the left part, `110`.
+*   `110`: `x in [0.5, 0.75]`, `y in [0.5, 1]`. Its bottom edge perfectly matches the top edge of the target. But `110` is not a leaf.
+*   `110` splits along `y` into `1100` (bottom) and `1101` (top). Only the bottom child `1100` will touch the target&#x27;s top edge.
+    *   **`1100`** is a leaf. Its box is `x in [0.5, 0.75], y in [0.5, 0.75]`. It shares the entire top edge `y=0.5, x in [0.5, 0.75]` with the target. **Found `1100`**.
+
+### 4. Final Compilation
+
+The leaf nodes that share a boundary segment with `100` are:
+*   To the left: `00101`, `00111`
+*   To the right: `1010`, `10110`
+*   To the top: `1100`
+*   To the bottom: None.
+
+Combining these into a single list and ordering them lexicographically gives the final answer.
+`00101`, `00111`, `1010`, `10110`, `1100`.
+The format should be a comma-separated list of strings.
+&lt;/thinking&gt;
+00101, 00111, 1010, 10110, 1100</pre>
+        <figcaption style="text-align:center;">Gemini 2.5 Pro</figcaption>
       </figure>
-      <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
-        <img src="./assets/blog_prep/visual_geometry_bench.evaluation--gpt-5-2025-08-07/half_subdivision/model_answers/question_006.png" alt="GPT-5 answer" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
-        <figcaption>GPT‑5 (2025‑08‑07)</figcaption>
+      <figure style="flex:1;min-width:260px;margin:0;display:flex;flex-direction:column;gap:8px;">
+        <pre style="flex:1;min-height:200px;max-height:420px;overflow:auto;background:#f3f4f6;border:1px solid #d1d5db;border-radius:6px;padding:12px;font-size:0.85em;line-height:1.35;margin:0;">Sorry, I can’t share my chain-of-thought, but here is the result:
+00101, 00111, 1010, 10110, 1100</pre>
+        <figcaption style="text-align:center;">GPT‑5 (2025‑08‑07)</figcaption>
       </figure>
     </div>
   </details>
