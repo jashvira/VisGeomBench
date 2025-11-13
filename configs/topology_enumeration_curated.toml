@@ -8,8 +8,8 @@ metadata = { tags = ["topology", "enumeration", "curated"], difficulty = "mixed"
 
 datagen_args_grid = [
   { n_classes = 2, corner_order = ["bottom-left", "bottom-right", "top-right", "top-left"], metadata = { difficulty = "easy", tags = ["two-class", "canonical-orientation"] } },
-  { n_classes = 2, corner_order = ["bottom-left", "top-left", "top-right", "bottom-right"], metadata = { difficulty = "medium", tags = ["two-class", "column-major"] } },
+  { n_classes = 2, corner_order = ["bottom-left",  "top-right", "bottom-right", "top-left"], metadata = { difficulty = "hard", tags = ["two-class", "column-major"] } },
   { n_classes = 3, corner_order = ["bottom-left", "bottom-right", "top-right", "top-left"], metadata = { difficulty = "medium", tags = ["three-class", "canonical-orientation"] } },
-  { n_classes = 3, corner_order = ["bottom-right", "bottom-left", "top-left", "top-right"], metadata = { difficulty = "hard", tags = ["three-class", "mirror-order"] } },
+  { n_classes = 3, corner_order = ["bottom-left", "top-right", "bottom-right", "top-left"], metadata = { difficulty = "hard", tags = ["three-class", "mirror-order"] } },
   { n_classes = 3, corner_order = ["top-left", "bottom-right", "bottom-left", "top-right"], metadata = { difficulty = "very-hard", tags = ["three-class", "diagonal-traversal"] } },
 ]
