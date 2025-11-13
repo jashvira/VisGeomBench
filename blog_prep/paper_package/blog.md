@@ -615,6 +615,16 @@ Target leaf: 000111
 
 Before presenting the final list, begin your response with &lt;thinking&gt;...&lt;/thinking&gt; containing your full chain of thought or reasoning for your answer.
 List every leaf that shares a face with the target voxel. Return the labels as a comma-separated list of strings (quotes optional).</pre>
+      <pre style="flex:1;min-width:260px;max-height:420px;overflow:auto;background:#fefdf5;border:1px solid #facc15;border-radius:6px;padding:12px;font-size:0.9em;line-height:1.35;margin:0;">Ground truth neighbours (face-sharing leaves):
+0000011
+00010010
+00010011
+0001010
+000110100
+000110101
+00011011
+001001
+010101</pre>
     </div>
   </details>
 
@@ -823,6 +833,12 @@ Target leaf: 100
 
 Before presenting the final list, begin your response with &lt;thinking&gt;...&lt;/thinking&gt; containing your full chain of thought or reasoning for your answer.
 List every leaf that shares a boundary segment with the target. Return the labels as a comma-separated list of strings (quotes optional).</pre>
+      <pre style="flex:1;min-width:260px;max-height:420px;overflow:auto;background:#fefdf5;border:1px solid #facc15;border-radius:6px;padding:12px;font-size:0.9em;line-height:1.35;margin:0;">Ground truth neighbours (edge-sharing leaves):
+00110
+00111
+1010
+1100
+11010</pre>
     </div>
   </details>
 
