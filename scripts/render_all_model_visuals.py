@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 
 from scripts.render_spotcheck_visuals import _load_jsonl, render_spotchecks
+from visualisations.render import RenderMode
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -58,7 +59,13 @@ def regenerate_visuals(runs_root: Path, output_root: Path) -> None:
                 f"[render] model={model_slug} dataset={dataset_dir.name} "
                 f"questions={len(indices)} -> {out_dir}"
             )
-            render_spotchecks(results_path, dataset_path, out_dir, indices)
+            render_spotchecks(
+                results_path,
+                dataset_path,
+                out_dir,
+                indices,
+                mode=RenderMode.BOTH,
+            )
 
 
 def main() -> None:
