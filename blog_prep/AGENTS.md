@@ -44,7 +44,14 @@ keep everything in sync.
    The script infers which datasets appear in `paper_package/blog.md` and rewrites
    `blog_prompts.json` directly from `data/<dataset>.jsonl`.
 
-5. **Sync the shipping bundle**
+5. **Regenerate performance bar charts**
+   ```bash
+   python blog_prep/visualisations/plot_task_performance.py
+   ```
+   This rewrites `blog_prep/visualisations/task_performance*.png` using the latest
+   success rates from `blog_prep/visual_geometry_bench.evaluation--*/**/results.jsonl`.
+
+6. **Sync the shipping bundle**
    ```bash
    python scripts/refresh_blog_assets.py
    ```
