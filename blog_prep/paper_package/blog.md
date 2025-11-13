@@ -17,7 +17,7 @@ Given scattered 2D points, identify which lie on the convex boundary and order t
     <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;margin-top:8px;">
       <figure style="flex:1;min-width:260px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
         <img src="./assets/blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/convex_hull_curated/questions_gt/question_001.png" alt="Convex hull question" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
-        <figcaption><strong>Question visual</strong></figcaption>
+        <figcaption><strong>Question visual/answer</strong></figcaption>
       </figure>
       <pre style="flex:1.5;min-width:320px;max-height:420px;overflow:auto;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:12px;font-size:0.9em;line-height:1.35;margin:0;">You are given a set of 2D points (indices correspond to the order shown):
 [
@@ -66,7 +66,7 @@ Strict output: a Python list of integers only.</pre>
     <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;margin-top:8px;">
       <figure style="flex:1;min-width:260px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
         <img src="./assets/blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/convex_hull_curated/questions_gt/question_002.png" alt="Convex hull question" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
-        <figcaption><strong>Question visual</strong></figcaption>
+        <figcaption><strong>Question visual/answer</strong></figcaption>
       </figure>
       <pre style="flex:1.5;min-width:320px;max-height:420px;overflow:auto;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:12px;font-size:0.9em;line-height:1.35;margin:0;">You are given a set of 2D points (indices correspond to the order shown):
 [
@@ -144,7 +144,7 @@ Partition a point set into triangles satisfying the empty-circle property: no po
     <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;margin-top:8px;">
       <figure style="flex:1;min-width:260px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
         <img src="./assets/blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/delaunay_dataset/questions_gt/question_001.png" alt="Delaunay triangulation question" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
-        <figcaption><strong>Question visual</strong></figcaption>
+        <figcaption><strong>Question visual/answer</strong></figcaption>
       </figure>
       <pre style="flex:1.5;min-width:320px;max-height:420px;overflow:auto;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:12px;font-size:0.9em;line-height:1.35;margin:0;">You are given a set of 2D points in general position (indices correspond to the order shown):
 [
@@ -189,7 +189,7 @@ Strict output: a Python list of lists of integers only.</pre>
     <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;margin-top:8px;">
       <figure style="flex:1;min-width:260px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
         <img src="./assets/blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/delaunay_dataset/questions_gt/question_004.png" alt="Delaunay triangulation question" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
-        <figcaption><strong>Question visual</strong></figcaption>
+        <figcaption><strong>Question visual/answer</strong></figcaption>
       </figure>
       <pre style="flex:1.5;min-width:320px;max-height:420px;overflow:auto;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:12px;font-size:0.9em;line-height:1.35;margin:0;">You are given a set of 2D points in general position (indices correspond to the order shown):
 [
@@ -246,7 +246,7 @@ Which corner labellings of a square force distinct regions to meet inside? Conti
     <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;margin-top:8px;">
       <figure style="flex:1;min-width:260px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
         <img src="./assets/blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/topology_enumeration_curated/questions_gt/question_001.png" alt="Topology enumeration question" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
-        <figcaption><strong>Question visual</strong></figcaption>
+        <figcaption><strong>Question visual/answer</strong></figcaption>
       </figure>
       <pre style="flex:1.5;min-width:320px;max-height:420px;overflow:auto;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:12px;font-size:0.9em;line-height:1.35;margin:0;">You are given a unit square with corners ordered (bottom-left, bottom-right, top-right, top-left). Each corner is labeled from {0, 1, 2...}. Boundaries inside may be any continuous curves; only corner labels are observed.
 
@@ -284,9 +284,9 @@ Strict output: a Python-style list of 4-tuples only.</pre>
     <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;margin-top:8px;">
       <figure style="flex:1;min-width:260px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
         <img src="./assets/blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/topology_enumeration_curated/questions_gt/question_002.png" alt="Topology enumeration question" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
-        <figcaption><strong>Question visual</strong></figcaption>
+        <figcaption><strong>Question visual/answer</strong></figcaption>
       </figure>
-      <pre style="flex:1.5;min-width:320px;max-height:420px;overflow:auto;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:12px;font-size:0.9em;line-height:1.35;margin:0;">You are given a unit square with corners ordered (bottom-left, top-left, top-right, bottom-right). Each corner is labeled from {0, 1, 2...}. Boundaries inside may be any continuous curves; only corner labels are observed.
+      <pre style="flex:1.5;min-width:320px;max-height:420px;overflow:auto;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:12px;font-size:0.9em;line-height:1.35;margin:0;">You are given a unit square with corners ordered (bottom-left, top-right, bottom-right, top-left). Each corner is labeled from {0, 1, 2...}. Boundaries inside may be any continuous curves; only corner labels are observed.
 
 Assume exactly 2 distinct classes occur anywhere in or on the square.
 
@@ -314,8 +314,7 @@ Strict output: a Python-style list of 4-tuples only.</pre>
 </details>
 
 ### Topology Edge Tasks
-**Enumerate edges**: Given corner labels, which boundary edges must connect through the interior?  
-
+Given corner labels, which boundary edges must connect through the interior?  
 Models infer connectivity from minimal boundary information, handling cases where topology alone cannot determine outcomes.
 
 <details open>
@@ -327,7 +326,7 @@ Models infer connectivity from minimal boundary information, handling cases wher
     <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;margin-top:8px;">
       <figure style="flex:1;min-width:260px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
         <img src="./assets/blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/topology_edge_enumerate_curated/questions_gt/question_001.png" alt="Topology edge question" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
-        <figcaption><strong>Question visual</strong></figcaption>
+        <figcaption><strong>Question visual/answer</strong></figcaption>
       </figure>
       <pre style="flex:1.5;min-width:320px;max-height:420px;overflow:auto;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:12px;font-size:0.9em;line-height:1.35;margin:0;">Squares (each tuple lists the four corner labels; integers denote distinct classes):
 (1, 1, 1, 1)
@@ -370,7 +369,7 @@ If no edges are deterministically guaranteed (including ambiguous cases), return
     <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;margin-top:8px;">
       <figure style="flex:1;min-width:260px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
         <img src="./assets/blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/topology_edge_enumerate_curated/questions_gt/question_002.png" alt="Topology edge question" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
-        <figcaption><strong>Question visual</strong></figcaption>
+        <figcaption><strong>Question visual/answer</strong></figcaption>
       </figure>
       <pre style="flex:1.5;min-width:320px;max-height:420px;overflow:auto;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:12px;font-size:0.9em;line-height:1.35;margin:0;">Squares (each tuple lists the four corner labels; integers denote distinct classes):
 (2, 1, 1, 1)
@@ -422,7 +421,6 @@ Each node splits its parent cell into two children by bisecting along axes in th
 Here is the subdivision tree:
 
 ```
-&quot;&quot;
 ├── 0
 │   ├── 00
 │   │   ├── 000
@@ -651,7 +649,6 @@ Each node splits its parent cell into two children by bisecting along axes in th
 Here is the subdivision tree:
 
 ```
-&quot;&quot;
 ├── 0
 │   ├── 00
 │   │   ├── 000
@@ -816,7 +813,7 @@ Partition a grid into rectangles such that each contains exactly one number equa
     <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;margin-top:8px;">
       <figure style="flex:1;min-width:260px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
         <img src="./assets/blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/shikaku_curated/questions_gt/question_001.png" alt="Shikaku question" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
-        <figcaption><strong>Question visual</strong></figcaption>
+        <figcaption><strong>Question visual/answer</strong></figcaption>
       </figure>
       <pre style="flex:1.5;min-width:320px;max-height:420px;overflow:auto;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:12px;font-size:0.9em;line-height:1.35;margin:0;">Solve the Shikaku puzzle on a 7×7 grid.
 Cells contain numbers indicating the area of the rectangle that must cover them;
@@ -863,7 +860,7 @@ Before presenting the final list, begin your response with &lt;thinking&gt;...&l
     <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;margin-top:8px;">
       <figure style="flex:1;min-width:260px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
         <img src="./assets/blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/shikaku_curated/questions_gt/question_006.png" alt="Shikaku question" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
-        <figcaption><strong>Question visual</strong></figcaption>
+        <figcaption><strong>Question visual/answer</strong></figcaption>
       </figure>
       <pre style="flex:1.5;min-width:320px;max-height:420px;overflow:auto;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:12px;font-size:0.9em;line-height:1.35;margin:0;">Solve the Shikaku puzzle on a 15×15 grid.
 Cells contain numbers indicating the area of the rectangle that must cover them;
