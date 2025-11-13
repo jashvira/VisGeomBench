@@ -290,3 +290,46 @@ def test_half_subdivision_renderer_generates_figure(renderers_ready):
     fig = visualise_record(record, answer)
     assert isinstance(fig, plt.Figure)
     plt.close(fig)
+
+
+def test_half_subdivision_question_answer_modes(renderers_ready):
+    record = {
+        "id": "half-sub-test",
+        "metadata": {"problem_type": "half_subdivision_neighbours"},
+        "datagen_args": {
+            "dim": "D2",
+            "max_depth": 3,
+            "min_depth": 2,
+            "split_prob": 0.6,
+            "start_axis": "x",
+            "seed": 99,
+            "target_leaf": "L",
+        },
+        "ground_truth": ["R", "T"],
+    }
+    answer = ["R", "Z"]
+
+    fig_question = visualise_record(
+        record,
+        answer,
+        mode=RenderMode.GROUND_TRUTH,
+        detail=False,
+        show=False,
+    )
+    fig_answer = visualise_record(
+        record,
+        answer,
+        mode=RenderMode.MODEL_ANSWER,
+        detail=False,
+        show=False,
+    )
+
+    assert isinstance(fig_question, plt.Figure)
+    assert isinstance(fig_answer, plt.Figure)
+    assert fig_question._suptitle is not None
+    assert fig_answer._suptitle is not None
+    assert "Question view" in fig_question._suptitle.get_text()
+    assert "Model answer view" in fig_answer._suptitle.get_text()
+
+    plt.close(fig_question)
+    plt.close(fig_answer)

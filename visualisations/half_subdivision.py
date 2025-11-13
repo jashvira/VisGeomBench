@@ -22,7 +22,9 @@ from visual_geometry_bench.datagen.half_subdivision_neighbours import (
 )
 
 from .render import (
+    RenderMode,
     get_answer_label,
+    get_render_mode,
     register_renderer,
     should_render_answers,
     should_render_truth,
@@ -315,6 +317,31 @@ def _format_label_lines(labels: list[str]) -> list[str]:
     return lines
 
 
+def _summarise_differences(
+    *,
+    correct: list[str],
+    missed: list[str],
+    extra: list[str],
+) -> list[str]:
+    lines: list[str] = []
+    if correct:
+        lines.append("Correct neighbours:")
+        lines.extend(_format_label_lines(correct))
+    if missed:
+        if lines:
+            lines.append("")
+        lines.append("Missing (in ground truth only):")
+        lines.extend(_format_label_lines(missed))
+    if extra:
+        if lines:
+            lines.append("")
+        lines.append("Extra (model only):")
+        lines.extend(_format_label_lines(extra))
+    if not lines:
+        lines.append("Matches ground truth exactly.")
+    return lines
+
+
 def _add_highlight_legend(
     ax: plt.Axes,
     *,
@@ -453,10 +480,17 @@ def _render_half_subdivision(
     datagen_args = record.get("datagen_args", {})
     leaves, dim, axis_cycle, default_target, default_ground = _generate_case(datagen_args)
     model_label = get_answer_label(record, default="Model answer")
+    render_mode = get_render_mode(record)
     render_truth = should_render_truth(record)
     render_answers = should_render_answers(record)
     if not render_truth and not render_answers:
         render_truth = True
+    mode_titles = {
+        RenderMode.GROUND_TRUTH: "Question view",
+        RenderMode.MODEL_ANSWER: "Model answer view",
+        RenderMode.BOTH: "Comparison view",
+    }
+    view_title = mode_titles.get(render_mode, "Visualisation")
 
     target_label_raw = datagen_args.get("target_leaf")
     target_label = target_label_raw if isinstance(target_label_raw, str) else None
@@ -470,7 +504,12 @@ def _render_half_subdivision(
     ground_truth_labels = explicit_ground_truth if explicit_ground_truth else default_ground
 
     fig = plt.figure(figsize=(14, 7))
-    fig.suptitle("Half Subdivision Neighbours", fontsize=15, weight="bold", y=0.985)
+    fig.suptitle(
+        f"Half Subdivision Neighbours — {view_title}",
+        fontsize=15,
+        weight="bold",
+        y=0.985,
+    )
     fig.patch.set_facecolor("white")
     fig.subplots_adjust(top=0.84)
     target_display = target_label if target_label else '""'
@@ -502,7 +541,9 @@ def _render_half_subdivision(
         correct_labels = []
         missed_labels = []
         extra_labels = []
-    show_model_answer = detail and has_answer and render_answers
+    force_answer_panels = render_mode is RenderMode.MODEL_ANSWER
+    show_model_answer = has_answer and render_answers and (detail or force_answer_panels)
+    show_diff_summary = render_answers and has_answer and (detail or force_answer_panels)
 
     model_labels_for_render = model_answer_labels if (render_answers and has_answer) else []
     correct_for_render = correct_labels if model_labels_for_render else []
@@ -515,11 +556,23 @@ def _render_half_subdivision(
         text_panels.append(("Ground truth", _format_label_lines(highlight_labels_text), gt_text_colour))
     if show_model_answer:
         text_panels.append((model_label, _format_label_lines(model_answer_labels), COLOURS["answer"]))
+    if show_diff_summary:
+        diff_lines = _summarise_differences(
+            correct=correct_labels,
+            missed=missed_labels,
+            extra=extra_labels,
+        )
+        text_panels.append(("Answer vs ground truth", diff_lines, COLOURS["annotation"]))
+
     text_rows = max(1, len(text_panels))
-    gs = fig.add_gridspec(text_rows, 2, width_ratios=[1, 2], hspace=0.35, wspace=0.25)
+    has_text_panels = bool(text_panels)
+    if has_text_panels:
+        gs = fig.add_gridspec(text_rows, 2, width_ratios=[1, 2], hspace=0.35, wspace=0.25)
+    else:
+        gs = fig.add_gridspec(text_rows, 1, hspace=0.35, wspace=0.0)
 
     # Left column: textual info (optional)
-    if text_panels:
+    if has_text_panels:
         for row_idx, (title, lines, colour) in enumerate(text_panels):
             ax_text = fig.add_subplot(gs[row_idx, 0])
             _render_text_block(
@@ -529,12 +582,11 @@ def _render_half_subdivision(
                 empty_message="(none)",
                 colour=colour,
             )
-    else:
-        fig.add_subplot(gs[0, 0]).axis("off")
     interactive_artists: list[plt.Artist] = []
+    spatial_col = 1 if has_text_panels else 0
 
     if dim == Dimension.D3:
-        ax_spatial = fig.add_subplot(gs[:, 1], projection="3d")
+        ax_spatial = fig.add_subplot(gs[:, spatial_col], projection="3d")
         interactive_artists.extend(
             _draw_voxels(
                 ax_spatial,
@@ -561,7 +613,7 @@ def _render_half_subdivision(
             model_label=model_label,
         )
     else:
-        ax_spatial = fig.add_subplot(gs[:, 1])
+        ax_spatial = fig.add_subplot(gs[:, spatial_col])
         axis_cycle_text = " → ".join(axis_cycle) if axis_cycle else ""
         title = "Spatial view (2D)"
         if axis_cycle_text:
