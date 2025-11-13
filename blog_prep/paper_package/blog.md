@@ -414,6 +414,10 @@ A square or cube is recursively split along axis-aligned planes. Given a target 
   <details open>
     <summary style="cursor:pointer;font-weight:600;">Question &amp; Prompt</summary>
     <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;margin-top:8px;">
+      <figure style="flex:1;min-width:260px;margin:0;text-align:center;display:flex;flex-direction:column;gap:8px;">
+        <img src="./assets/blog_prep/visualisations/half_subdiv_1.gif" alt="3D half-subdivision spatial view" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;">
+        <figcaption style="font-size:0.9em;color:#4b5563;">Spatial context (3D)</figcaption>
+      </figure>
       <pre style="flex:1;min-width:320px;max-height:420px;overflow:auto;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:12px;font-size:0.9em;line-height:1.35;margin:0;">You are given a binary tree describing an axis-aligned half subdivision of the unit cube.
 
 Each node splits its parent cell into two children by bisecting along axes in the repeating cycle z → y → x → x → z (repeating).
@@ -789,6 +793,10 @@ The final list is the collection of these strings.
   <details open>
     <summary style="cursor:pointer;font-weight:600;">Question &amp; Prompt</summary>
     <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;margin-top:8px;">
+      <figure style="flex:1;min-width:260px;margin:0;text-align:center;display:flex;flex-direction:column;gap:8px;">
+        <img src="./assets/blog_prep/model_visuals/gpt-5-2025-08-07/half_subdivision/question_006.png" alt="2D half-subdivision layout" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;">
+        <figcaption style="font-size:0.9em;color:#4b5563;">2D layout preview</figcaption>
+      </figure>
       <pre style="flex:1;min-width:320px;max-height:420px;overflow:auto;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:12px;font-size:0.9em;line-height:1.35;margin:0;">You are given a binary tree describing an axis-aligned half subdivision of the unit square.
 
 Each node splits its parent cell into two children by bisecting along axes in the repeating cycle x → y → x (repeating).
