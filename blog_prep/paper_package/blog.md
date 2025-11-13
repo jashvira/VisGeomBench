@@ -851,6 +851,13 @@ List every leaf that shares a boundary segment with the target. Return the label
   </details>
 
   <details>
+    <summary style="cursor:pointer;font-weight:600;">Question visual only</summary>
+    <figure style="margin:12px 0 0;text-align:center;">
+      <img src="./assets/blog_prep/model_visuals/gpt-5-2025-08-07/half_subdivision/question_006.png" alt="2D question layout only" style="max-width:560px;width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;">
+    </figure>
+  </details>
+
+  <details>
     <summary style="cursor:pointer;font-weight:600;">Model Answers</summary>
     <div style="display:flex;gap:16px;flex-wrap:wrap;margin:12px 0;">
       <figure style="flex:1;min-width:260px;margin:0;display:flex;flex-direction:column;gap:8px;">
