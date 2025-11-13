@@ -693,11 +693,11 @@ List every leaf that shares a boundary segment with the target. Return the label
     <summary style="cursor:pointer;font-weight:600;">Model Answers</summary>
     <div style="display:flex;gap:16px;flex-wrap:nowrap;margin:12px 0;overflow-x:auto;">
       <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
-        <img src="./assets/blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/half_subdivision/model_answers/question_003.png" alt="Gemini 2.5 Pro answer" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+        <img src="./assets/blog_prep/visual_geometry_bench.evaluation--google--gemini-2.5-pro/half_subdivision/model_answers/question_006.png" alt="Gemini 2.5 Pro answer" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
         <figcaption>Gemini 2.5 Pro</figcaption>
       </figure>
       <figure style="flex:1;min-width:280px;margin:0;text-align:center;display:flex;flex-direction:column;align-items:center;">
-        <img src="./assets/blog_prep/visual_geometry_bench.evaluation--gpt-5-2025-08-07/half_subdivision/model_answers/question_003.png" alt="GPT-5 answer" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
+        <img src="./assets/blog_prep/visual_geometry_bench.evaluation--gpt-5-2025-08-07/half_subdivision/model_answers/question_006.png" alt="GPT-5 answer" style="width:100%;height:auto;border:1px solid #d1d5db;border-radius:4px;margin:0 0 8px;">
         <figcaption>GPT‑5 (2025‑08‑07)</figcaption>
       </figure>
     </div>
