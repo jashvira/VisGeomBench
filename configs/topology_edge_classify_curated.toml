@@ -10,5 +10,15 @@ datagen_args_grid = [
   { subtask = "classify_behaviour", corner_order = ["bottom-left", "bottom-right", "top-right", "top-left"], cases = [0, 4, 6, 10], metadata = { difficulty = "medium", tags = ["canonical-order", "mixed-behaviour"] } },
   { subtask = "classify_behaviour", corner_order = ["top-right", "bottom-right", "bottom-left", "top-left"], cases = [11, 1, 2, 14], metadata = { difficulty = "hard", tags = ["rotated-order", "triple-junction"] } },
   { subtask = "classify_behaviour", corner_order = ["bottom-right", "top-right", "top-left", "bottom-left"], cases = [3, 5, 7, 9, 13], metadata = { difficulty = "medium", tags = ["edge-walk", "three-domains"] } },
+  { subtask = "classify_behaviour", corner_order = ["top-left", "top-right", "bottom-right", "bottom-left"], cases = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], metadata = { difficulty = "hard" } },
+  { subtask = "classify_behaviour", corner_order = ["top-left", "bottom-left", "bottom-right", "top-right"], cases = [6, 14, 4, 11], metadata = { difficulty = "hard" } },
+  { subtask = "classify_behaviour", corner_order = ["bottom-left", "top-left", "top-right", "bottom-right"], cases = [8, 10, 12, 13, 0], metadata = { difficulty = "medium" } },
+  { subtask = "classify_behaviour", corner_order = ["top-right", "top-left", "bottom-left", "bottom-right"], cases = [1, 6, 10, 14, 3, 9], metadata = { difficulty = "hard" } },
+  { subtask = "classify_behaviour", corner_order = ["bottom-right", "bottom-left", "top-left", "top-right"], cases = [2, 5, 8, 11, 7], metadata = { difficulty = "medium" } },
+  { subtask = "classify_behaviour", corner_order = ["top-left", "bottom-right", "bottom-left", "top-right"], cases = [4, 6, 13, 14, 10, 11], metadata = { difficulty = "hard" } },
+  { subtask = "classify_behaviour", corner_order = ["bottom-left", "top-right", "top-left", "bottom-right"], cases = [0, 3, 6, 9, 12, 14], metadata = { difficulty = "hard" } },
+  { subtask = "classify_behaviour", corner_order = ["top-right", "bottom-left", "top-left", "bottom-right"], cases = [7, 8, 11, 13, 2], metadata = { difficulty = "hard" } },
+  { subtask = "classify_behaviour", corner_order = ["bottom-right", "top-left", "bottom-left", "top-right"], cases = [1, 4, 5, 10, 12, 13, 14], metadata = { difficulty = "hard" } },
+  { subtask = "classify_behaviour", corner_order = ["top-left", "bottom-right", "top-right", "bottom-left"], cases = [0, 2, 6, 8, 11, 14], metadata = { difficulty = "hard" } },
 ]
 

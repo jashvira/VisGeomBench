@@ -10,5 +10,10 @@ datagen_args_grid = [
   { subtask = "enumerate_edges", corner_order = ["bottom-left", "bottom-right", "top-right", "top-left"], edge_order = ["bottom", "right", "top", "left"], cases = [0, 1, 2, 3], metadata = { difficulty = "easy", tags = ["canonical-order", "two-class"] } },
   { subtask = "enumerate_edges", corner_order = ["bottom-right", "top-right", "top-left", "bottom-left"], edge_order = ["right", "top", "left", "bottom"], cases = [5, 6, 7, 8, 9], metadata = { difficulty = "medium", tags = ["rotated-order", "ambiguous-included"] } },
   { subtask = "enumerate_edges", corner_order = ["top-left", "bottom-left", "bottom-right", "top-right"], edge_order = ["top", "left", "bottom", "right"], cases = [12, 14, 1, 2], metadata = { difficulty = "hard", tags = ["edge-permutation", "mixed-behaviour"] } },
+  { subtask = "enumerate_edges", corner_order = ["top-right", "bottom-left", "top-left", "bottom-right"], edge_order = ["left", "bottom", "right", "top"], cases = [0, 3, 5, 7, 9, 12], metadata = { difficulty = "hard" } },
+  { subtask = "enumerate_edges", corner_order = ["bottom-left", "top-right", "bottom-right", "top-left"], edge_order = ["bottom", "left", "top", "right"], cases = [1, 2, 6, 8, 14], metadata = { difficulty = "hard" } },
+  { subtask = "enumerate_edges", corner_order = ["top-left", "top-right", "bottom-left", "bottom-right"], edge_order = ["right", "bottom", "left", "top"], cases = [3, 7, 12, 14], metadata = { difficulty = "hard" } },
+  { subtask = "enumerate_edges", corner_order = ["bottom-right", "bottom-left", "top-right", "top-left"], edge_order = ["top", "right", "bottom", "left"], cases = [0, 1, 5, 6, 8, 9, 12], metadata = { difficulty = "hard" } },
+  { subtask = "enumerate_edges", corner_order = ["top-right", "top-left", "bottom-right", "bottom-left"], edge_order = ["left", "top", "right", "bottom"], cases = [2, 3, 7, 9, 14], metadata = { difficulty = "hard" } },
 ]
 
