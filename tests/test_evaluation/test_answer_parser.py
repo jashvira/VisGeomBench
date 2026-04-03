@@ -227,3 +227,15 @@ class TestPythonLiteralParser:
         assert result is not None
         parsed = ast.literal_eval(result)
         assert list(map(str, parsed)) == ["0000", "0001", "0010"]
+
+    def test_final_answer_marker_is_preferred(self, parser):
+        """An explicit final-answer line beats earlier stray literals."""
+        text = """
+        Terminal leaves: ["0", "1"]
+        Reasoning: the only neighbour is 1
+        Final answer: 1
+        """
+        result = parser.parse_answer(text)
+        assert result is not None
+        parsed = ast.literal_eval(result)
+        assert str(parsed) == "1"

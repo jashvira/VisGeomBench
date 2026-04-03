@@ -45,31 +45,56 @@ class PythonLiteralParser(vf.Parser):
         if not text:
             return None
 
-        # Strategy 1: Try code fence extraction
+        # Strategy 1: Prefer an explicit final-answer marker when present.
+        final_answer = self._extract_final_answer(text)
+        if final_answer is not None:
+            return final_answer
+
+        # Strategy 2: Try code fence extraction
         code_fence = self._extract_from_code_fence(text)
         if code_fence and self._is_valid_literal(code_fence):
             return code_fence.strip()
 
         stripped = text.strip()
 
-        # Strategy 2: Try parsing whole text if it looks clean
+        # Strategy 3: Try parsing whole text if it looks clean
         if self._is_valid_literal(stripped):
             return stripped
 
-        # Strategy 3: Trailing comma-delimited sequences (prefer multi-token answers)
+        # Strategy 4: Trailing comma-delimited sequences (prefer multi-token answers)
         simple_list = self._parse_simple_sequence(stripped, min_tokens=2)
         if simple_list is not None:
             return simple_list
 
-        # Strategy 4: Backscan for last balanced bracket structure
+        # Strategy 5: Backscan for last balanced bracket structure
         backscanned = self._backscan_literal(text)
         if backscanned and self._is_valid_literal(backscanned):
             return backscanned.strip()
 
-        # Strategy 5: Final fallback to simple sequence (even single token)
+        # Strategy 6: Final fallback to simple sequence (even single token)
         simple_list = self._parse_simple_sequence(stripped, min_tokens=1)
         if simple_list is not None:
             return simple_list
+
+        return None
+
+    def _extract_final_answer(self, text: str) -> Optional[str]:
+        """Extract a value from the last `Final answer:` line."""
+
+        lines = [line.strip() for line in text.splitlines() if line.strip()]
+        for line in reversed(lines):
+            if ":" not in line:
+                continue
+            prefix, suffix = line.split(":", 1)
+            if prefix.strip().lower() != "final answer":
+                continue
+
+            candidate = suffix.strip()
+            if not candidate:
+                return None
+            if self._is_valid_literal(candidate):
+                return candidate
+            return self._parse_simple_sequence(candidate, min_tokens=1)
 
         return None
 

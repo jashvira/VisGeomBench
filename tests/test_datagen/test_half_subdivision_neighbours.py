@@ -18,6 +18,7 @@ class TestPromptGeneration:
         prompt = make_prompt(args)
         assert "Terminal leaves:" in prompt
         assert "root-to-leaf bitstring" in prompt
+        assert "Final answer:" in prompt
         assert "[" in prompt and "]" in prompt
         assert "000" in prompt
         assert "repeating" in prompt.lower()

@@ -350,8 +350,9 @@ def _format_prompt(leaf_labels: Sequence[str], target: Leaf, dim: Dimension, axi
         "axis; bit 1 means the upper half. Any listed label is terminal.\n\n"
         f"Terminal leaves:\n{leaf_block}\n\n"
         f"Target leaf: {target.display_label()}\n\n"
-        f"List every terminal leaf that {contact}. Return only a comma-separated list of labels "
-        "(quotes optional)."
+        f"List every terminal leaf that {contact}. You may explain briefly, but end with a final "
+        "line exactly in this form:\n"
+        "Final answer: label1, label2"
     )
 
 
