@@ -189,8 +189,7 @@ def make_prompt(datagen_args: dict) -> str:
         Formatted prompt string requesting triangle index triples
     """
     points = _to_points(datagen_args)
-    display_points = np.round(points, 3)
-    points_text = ",\n".join(f"  {list(map(float, pt))}" for pt in display_points)
+    points_text = ",\n".join(f"  {list(map(float, pt))}" for pt in points)
 
     prompt_lines = [
         "You are given a set of 2D points in general position (indices correspond to the order shown):",
