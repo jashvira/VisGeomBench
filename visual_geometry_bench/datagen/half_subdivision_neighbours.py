@@ -313,53 +313,49 @@ def _prepare_case(datagen_args: dict) -> tuple[str, Leaf, list[Leaf], dict]:
         "start_axis": axis_cycle[0],
         "axis_cycle": list(axis_cycle),
         "dimension": dim_name,
+        "leaf_count": len(leaves),
+        "leaf_labels": [leaf.display_label() for leaf in leaves],
         **({"target_label": target.display_label()} if target_label is not None else {}),
     }
 
     return treelib_text, target, neighbours, runtime_info
 
 
-_2D_PROMPT_TEMPLATE = """You are given a binary tree describing an axis-aligned half subdivision of the unit square.
-
-Each node splits its parent cell into two children by bisecting along axes in the repeating cycle {axis_cycle_text}.
-
-Here is the subdivision tree:
-
-```
-{tree_text}
-```
-
-Target leaf: {target_label}
-
-Before presenting the final list, begin your response with <thinking>...</thinking> containing your full chain of thought or reasoning for your answer.
-List every leaf that shares a boundary segment with the target. Return the labels as a comma-separated list of strings (quotes optional)."""
+def _label_sort_key(label: str) -> tuple[int, str]:
+    raw = "" if label == '""' else label
+    return (len(raw), raw)
 
 
-_3D_PROMPT_TEMPLATE = """You are given a binary tree describing an axis-aligned half subdivision of the unit cube.
-
-Each node splits its parent cell into two children by bisecting along axes in the repeating cycle {axis_cycle_text}.
-
-Here is the subdivision tree:
-
-```
-{tree_text}
-```
-
-Target leaf: {target_label}
-
-Before presenting the final list, begin your response with <thinking>...</thinking> containing your full chain of thought or reasoning for your answer.
-List every leaf that shares a face with the target voxel. Return the labels as a comma-separated list of strings (quotes optional)."""
+def _format_leaf_block(labels: Sequence[str], *, row_width: int = 12) -> str:
+    rows = [
+        ", ".join(f'"{label}"' for label in labels[index : index + row_width])
+        for index in range(0, len(labels), row_width)
+    ]
+    return "[\n  " + ",\n  ".join(rows) + "\n]"
 
 
-def _format_prompt(tree_text: str, target: Leaf, dim: Dimension, axis_cycle: Sequence[str]) -> str:
+def _format_prompt(leaf_labels: Sequence[str], target: Leaf, dim: Dimension, axis_cycle: Sequence[str]) -> str:
     """Render the user-facing prompt for the given subdivision and dimension."""
 
-    template = _3D_PROMPT_TEMPLATE if dim == Dimension.D3 else _2D_PROMPT_TEMPLATE
-    axis_cycle_text = " → ".join(axis_cycle)
-    return template.format(
-        tree_text=tree_text.rstrip(),
-        target_label=target.display_label(),
-        axis_cycle_text=f"{axis_cycle_text} (repeating)",
+    shape = "unit cube" if dim == Dimension.D3 else "unit square"
+    contact = "shares a face with the target voxel" if dim == Dimension.D3 else (
+        "shares a boundary segment with the target"
+    )
+    axis_cycle_text = " -> ".join(axis_cycle)
+    leaf_block = _format_leaf_block(sorted(leaf_labels, key=_label_sort_key))
+    return (
+        f"You are given a binary tree describing an axis-aligned half subdivision of the {shape}.\n\n"
+        "Each node splits its parent cell into two children by bisecting along axes in the "
+        f"repeating cycle {axis_cycle_text} (repeating).\n\n"
+        "Instead of the full tree, you are given the terminal leaves only. Each label is the "
+        "root-to-leaf bitstring for a terminal cell: at each depth, bit 0 selects the lower "
+        "half and bit 1 selects the upper half along that split axis.\n\n"
+        f"Here are the terminal leaves of the subdivision:\n\n{leaf_block}\n\n"
+        f"Target leaf: {target.display_label()}\n\n"
+        "Before presenting the final list, begin your response with <thinking>...</thinking> "
+        "containing your full chain of thought or reasoning for your answer.\n"
+        f"List every leaf that {contact}. Return the labels as a comma-separated list of "
+        "strings (quotes optional)."
     )
 
 
@@ -373,12 +369,13 @@ def make_prompt(datagen_args: dict) -> str:
     """Generate a prompt matching the provided half-subdivision configuration."""
 
     tree_text, target, _, runtime = _prepare_case(datagen_args)
+    del tree_text
     dim_name = runtime["dimension"]
     dim = Dimension.D2 if dim_name == "2D" else Dimension.D3 if dim_name == "3D" else Dimension[dim_name]
     axis_cycle = tuple(runtime.get("axis_cycle", []))
     if not axis_cycle:
         axis_cycle = ("x", "y") if dim == Dimension.D2 else ("x", "y", "z")
-    return _format_prompt(tree_text, target, dim, axis_cycle)
+    return _format_prompt(runtime.get("leaf_labels", []), target, dim, axis_cycle)
 
 
 def get_solutions(datagen_args: dict) -> list[str]:
@@ -416,7 +413,7 @@ def generate_dataset_record(
     if not axis_cycle:
         axis_cycle = ("x", "y") if dim == Dimension.D2 else ("x", "y", "z")
 
-    prompt = _format_prompt(tree_text, target, dim, axis_cycle)
+    prompt = _format_prompt(runtime_info.get("leaf_labels", []), target, dim, axis_cycle)
     ground_truth = _canonical_labels(neighbours)
 
     metadata = {"problem_type": "half_subdivision_neighbours"}

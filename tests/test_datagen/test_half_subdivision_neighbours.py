@@ -12,12 +12,13 @@ from visual_geometry_bench.datagen.half_subdivision_neighbours import (
 class TestPromptGeneration:
     """Test prompt generation."""
 
-    def test_make_prompt_includes_tree_and_target(self):
-        """Prompt contains treelib tree and target label."""
+    def test_make_prompt_includes_leaf_list_and_target(self):
+        """Prompt contains the compact leaf list and target label."""
         args = {"max_depth": 3, "split_prob": 1.0, "seed": 42, "target_label": "000"}
         prompt = make_prompt(args)
-        assert "```" in prompt
-        assert '""' in prompt
+        assert "terminal leaves only" in prompt
+        assert "Here are the terminal leaves of the subdivision:" in prompt
+        assert "[" in prompt and "]" in prompt
         assert "000" in prompt
         assert "repeating" in prompt.lower()
 
@@ -73,8 +74,8 @@ class TestSolutionGeneration:
         # Prompts should mention square vs cube and axis rules
         assert "square" in prompt_2d
         assert "cube" in prompt_3d
-        assert "x → y" in prompt_2d
-        assert "x → y → z" in prompt_3d
+        assert "x -> y" in prompt_2d
+        assert "x -> y -> z" in prompt_3d
         # Solutions can differ due to different adjacency definitions
         assert isinstance(sol_2d, list) and isinstance(sol_3d, list)
 
@@ -102,7 +103,7 @@ class TestSolutionGeneration:
             "axis_cycle": axis_cycle,
         }
         prompt = make_prompt(args)
-        assert "y → z → z → x → y" in prompt
+        assert "y -> z -> z -> x -> y" in prompt
         record = generate_dataset_record(args)
         assert record["runtime"]["axis_cycle"] == axis_cycle
         assert record["datagen_args"]["axis_cycle"] == axis_cycle
