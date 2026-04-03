@@ -16,8 +16,8 @@ class TestPromptGeneration:
         """Prompt contains the compact leaf list and target label."""
         args = {"max_depth": 3, "split_prob": 1.0, "seed": 42, "target_label": "000"}
         prompt = make_prompt(args)
-        assert "terminal leaves only" in prompt
-        assert "Here are the terminal leaves of the subdivision:" in prompt
+        assert "Terminal leaves:" in prompt
+        assert "root-to-leaf bitstring" in prompt
         assert "[" in prompt and "]" in prompt
         assert "000" in prompt
         assert "repeating" in prompt.lower()

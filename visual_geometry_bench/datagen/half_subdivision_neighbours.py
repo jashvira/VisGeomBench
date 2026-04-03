@@ -344,18 +344,14 @@ def _format_prompt(leaf_labels: Sequence[str], target: Leaf, dim: Dimension, axi
     axis_cycle_text = " -> ".join(axis_cycle)
     leaf_block = _format_leaf_block(sorted(leaf_labels, key=_label_sort_key))
     return (
-        f"You are given a binary tree describing an axis-aligned half subdivision of the {shape}.\n\n"
-        "Each node splits its parent cell into two children by bisecting along axes in the "
-        f"repeating cycle {axis_cycle_text} (repeating).\n\n"
-        "Instead of the full tree, you are given the terminal leaves only. Each label is the "
-        "root-to-leaf bitstring for a terminal cell: at each depth, bit 0 selects the lower "
-        "half and bit 1 selects the upper half along that split axis.\n\n"
-        f"Here are the terminal leaves of the subdivision:\n\n{leaf_block}\n\n"
+        f"You are given the terminal leaves of an axis-aligned half subdivision of the {shape}.\n\n"
+        "Each label is a root-to-leaf bitstring. At depth d, the split axis follows the "
+        f"repeating cycle {axis_cycle_text} (repeating). Bit 0 means the lower half on that "
+        "axis; bit 1 means the upper half. Any listed label is terminal.\n\n"
+        f"Terminal leaves:\n{leaf_block}\n\n"
         f"Target leaf: {target.display_label()}\n\n"
-        "Before presenting the final list, begin your response with <thinking>...</thinking> "
-        "containing your full chain of thought or reasoning for your answer.\n"
-        f"List every leaf that {contact}. Return the labels as a comma-separated list of "
-        "strings (quotes optional)."
+        f"List every terminal leaf that {contact}. Return only a comma-separated list of labels "
+        "(quotes optional)."
     )
 
 
