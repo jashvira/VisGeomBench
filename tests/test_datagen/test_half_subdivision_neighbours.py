@@ -22,6 +22,9 @@ class TestPromptGeneration:
         assert "[" in prompt and "]" in prompt
         assert "000" in prompt
         assert "repeating" in prompt.lower()
+        assert 'Final answer: ["label1", "label2"]' in prompt
+        assert "non-zero-length boundary segment" in prompt
+        assert "Do not include leaves that only touch the target at a corner" in prompt
 
     def test_make_prompt_deterministic(self):
         """Same args produce identical prompts."""

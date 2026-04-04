@@ -338,8 +338,10 @@ def _format_prompt(leaf_labels: Sequence[str], target: Leaf, dim: Dimension, axi
     """Render the user-facing prompt for the given subdivision and dimension."""
 
     shape = "unit cube" if dim == Dimension.D3 else "unit square"
-    contact = "shares a face with the target voxel" if dim == Dimension.D3 else (
-        "shares a boundary segment with the target"
+    contact = (
+        "shares a face with the target voxel"
+        if dim == Dimension.D3
+        else "shares a non-zero-length boundary segment with the target"
     )
     axis_cycle_text = " -> ".join(axis_cycle)
     leaf_block = _format_leaf_block(sorted(leaf_labels, key=_label_sort_key))
@@ -350,9 +352,10 @@ def _format_prompt(leaf_labels: Sequence[str], target: Leaf, dim: Dimension, axi
         "axis; bit 1 means the upper half. Any listed label is terminal.\n\n"
         f"Terminal leaves:\n{leaf_block}\n\n"
         f"Target leaf: {target.display_label()}\n\n"
-        f"List every terminal leaf that {contact}. You may explain briefly, but end with a final "
-        "line exactly in this form:\n"
-        "Final answer: label1, label2"
+        f"List every terminal leaf that {contact}. "
+        "Do not include leaves that only touch the target at a corner or a single point. "
+        "You may explain briefly, but end with a final line exactly in this form:\n"
+        'Final answer: ["label1", "label2"]'
     )
 
 
