@@ -92,6 +92,10 @@ class PythonLiteralParser(vf.Parser):
             candidate = suffix.strip()
             if not candidate:
                 return None
+            if "," in candidate and not any(bracket in candidate for bracket in "[]{}()"):
+                sequence = self._parse_simple_sequence(candidate, min_tokens=1)
+                if sequence is not None:
+                    return sequence
             if self._is_valid_literal(candidate):
                 return candidate
             return self._parse_simple_sequence(candidate, min_tokens=1)

@@ -239,3 +239,11 @@ class TestPythonLiteralParser:
         assert result is not None
         parsed = ast.literal_eval(result)
         assert str(parsed) == "1"
+
+    def test_final_answer_marker_preserves_leading_zero_tokens(self, parser):
+        """Bare bitstring answers on the final line stay sequence-like strings."""
+        text = "Final answer: 00, 11"
+        result = parser.parse_answer(text)
+        assert result is not None
+        parsed = ast.literal_eval(result)
+        assert list(map(str, parsed)) == ["00", "11"]
